@@ -7,7 +7,7 @@ add_compile_options(-Wall -Wextra -Wpedantic)
 link_libraries(${PROJECT_NAME})
 
 set(source_files
-  clippson.cpp
+  example.cpp
 )
 foreach(src IN LISTS source_files)
   get_filename_component(name_we ${src} NAME_WE)
