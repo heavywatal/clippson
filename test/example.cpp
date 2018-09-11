@@ -11,54 +11,64 @@ struct Parameters {
     size_t SIZE_T = std::numeric_limits<size_t>::max();
     double DOUBLE = 0.0;
     std::string STRING = "Hello, world!";
-};
 
-inline clipp::group test_types(nlohmann::json& vm, Parameters& p) {
-    return clipp::with_prefixes_short_long("-", "--",
-      wtl::option_bool(vm, {"b", "bool"}),
-      wtl::option(vm, {"i", "int"}, &p.INT),
-      wtl::option(vm, {"l", "long"}, &p.LONG),
-      wtl::option(vm, {"u", "unsigned"}, &p.UNSIGNED),
-      wtl::option(vm, {"s", "size_t"}, &p.SIZE_T),
-      wtl::option(vm, {"d", "double"}, &p.DOUBLE),
-      wtl::option(vm, {"c", "string"}, &p.STRING)
-    ).doc("Supported types:");
-}
+    clipp::group cli(nlohmann::json& vm) {
+        return clipp::with_prefixes_short_long("-", "--",
+          wtl::option(vm, {"b", "bool"}, &BOOL),
+          wtl::option(vm, {"i", "int"}, &INT),
+          wtl::option(vm, {"l", "long"}, &LONG),
+          wtl::option(vm, {"u", "unsigned"}, &UNSIGNED),
+          wtl::option(vm, {"s", "size_t"}, &SIZE_T),
+          wtl::option(vm, {"d", "double"}, &DOUBLE),
+          wtl::option(vm, {"c", "string"}, &STRING)
+        ).doc("Notified to both json and targets:");
+    }
+};
 
 int main(int argc, char* argv[]) {
     const auto program = argv[0];
     std::vector<std::string> arguments(argv + 1, argv + argc);
 
     bool help = false;
-    bool version = false;
     int answer = 42;
-    clipp::group general_options = clipp::with_prefixes_short_long("-", "--",
-      wtl::option_bool({"h", "help"}, &help, "Print help"),
-      wtl::option_bool({"version"}, &version, "Print version"),
+    auto to_targets = clipp::with_prefixes_short_long("-", "--",
+      wtl::option({"h", "help"}, &help, "Print help"),
       wtl::option({"a", "answer"}, &answer, "Answer")
-    ).doc("Not stored in json:");
+    ).doc("Notified to targets:");
 
     nlohmann::json vm;
-    Parameters p;
+    auto to_json = clipp::with_prefixes_short_long("-", "--",
+      wtl::option(vm, {"v", "version"}, false, "Print version"),
+      wtl::option(vm, {"whoami"}, 24601)
+    ).doc("Notified to json:");
+
+    Parameters params;
+    auto to_json_and_targets = params.cli(vm);
+
     auto cli = (
-      general_options,
-      test_types(vm, p)
+      to_targets,
+      to_json,
+      to_json_and_targets
     );
+    std::string default_values = vm.dump(2);
     auto parsed = clipp::parse(arguments, cli);
+    clipp::debug::print(std::cerr, parsed);
     if (!parsed) {
         wtl::usage(std::cout, cli, program)
           << "Error: unknown argument\n";
         return 1;
     }
-    clipp::debug::print(std::cerr, parsed);
     if (help) {
         wtl::usage(std::cout, cli, program);
         return 0;
     }
-    if (version) {
+    if (vm["version"]) {
         std::cout << "clipp 1.2.0\n";
         return 0;
     }
-    std::cerr << "Answer: " << answer << "\n";
-    std::cout << vm.dump(2) << "\n";
+    std::cout << "Default values:\n"
+              << default_values << "\n";
+    std::cout << "Current values:\n"
+              << vm.dump(2) << "\n";
+    std::cout << "Answer: " << answer << "\n";
 }

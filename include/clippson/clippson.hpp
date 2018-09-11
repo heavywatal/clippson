@@ -48,49 +48,57 @@ std::string doc_default(const T& x, const std::string& doc) {
 }
 
 template <typename T> inline
-std::function<void(const char*)> set(nlohmann::json& obj, const char* key) {
-    auto& j = obj[key];
-    return [&j](const char* s){j = s;};
+std::function<void(const char*)> set(nlohmann::json& obj, const std::string& key) {
+    auto& item = obj.at(key);
+    return [&item](const char* s){item = s;};
 }
 
 template <> inline
-std::function<void(const char*)> set<bool>(nlohmann::json& obj, const char* key) {
-    return [&obj, key](const char*){obj[key] = true;};
+std::function<void(const char*)> set<bool>(nlohmann::json& obj, const std::string& key) {
+    auto& item = obj.at(key);
+    return [&](const char*){item = true;};
 }
 
 template <> inline
-std::function<void(const char*)> set<int>(nlohmann::json& obj, const char* key) {
-    return [&obj, key](const char* s){obj[key] = std::stoi(s);};
+std::function<void(const char*)> set<int>(nlohmann::json& obj, const std::string& key) {
+    auto& item = obj.at(key);
+    return [&item](const char* s){item = std::stoi(s);};
 }
 
 template <> inline
-std::function<void(const char*)> set<long>(nlohmann::json& obj, const char* key) {
-    return [&obj, key](const char* s){obj[key] = std::stol(s);};
+std::function<void(const char*)> set<long>(nlohmann::json& obj, const std::string& key) {
+    auto& item = obj.at(key);
+    return [&item](const char* s){item = std::stol(s);};
 }
 
 template <> inline
-std::function<void(const char*)> set<unsigned>(nlohmann::json& obj, const char* key) {
-    return [&obj, key](const char* s){obj[key] = static_cast<unsigned>(std::stoul(s));};
+std::function<void(const char*)> set<unsigned>(nlohmann::json& obj, const std::string& key) {
+    auto& item = obj.at(key);
+    return [&item](const char* s){item = static_cast<unsigned>(std::stoul(s));};
 }
 
 template <> inline
-std::function<void(const char*)> set<unsigned long>(nlohmann::json& obj, const char* key) {
-    return [&obj, key](const char* s){obj[key] = std::stoul(s);};
+std::function<void(const char*)> set<unsigned long>(nlohmann::json& obj, const std::string& key) {
+    auto& item = obj.at(key);
+    return [&item](const char* s){item = std::stoul(s);};
 }
 
 template <> inline
-std::function<void(const char*)> set<unsigned long long>(nlohmann::json& obj, const char* key) {
-    return [&obj, key](const char* s){obj[key] = std::stoull(s);};
+std::function<void(const char*)> set<unsigned long long>(nlohmann::json& obj, const std::string& key) {
+    auto& item = obj.at(key);
+    return [&item](const char* s){item = std::stoull(s);};
 }
 
 template <> inline
-std::function<void(const char*)> set<double>(nlohmann::json& obj, const char* key) {
-    return [&obj, key](const char* s){obj[key] = std::stod(s);};
+std::function<void(const char*)> set<double>(nlohmann::json& obj, const std::string& key) {
+    auto& item = obj.at(key);
+    return [&item](const char* s){item = std::stod(s);};
 }
 
 } // namespace detail
 
-template <class T> inline clipp::group
+template <class T, detail::enable_if_t<!std::is_same<T, bool>{}> = nullptr>
+inline clipp::group
 option(std::vector<std::string>&& flags, T* target, const std::string& doc="", const std::string& label="arg") {
     return (
       clipp::option(std::move(flags)) &
@@ -99,33 +107,47 @@ option(std::vector<std::string>&& flags, T* target, const std::string& doc="", c
 }
 
 inline clipp::parameter
-option_bool(std::vector<std::string>&& flags, bool* target, const std::string& doc="") {
+option(std::vector<std::string>&& flags, bool* target, const std::string& doc=" ") {
     return clipp::option(std::move(flags)).set(*target).doc(doc);
 }
 
-template <class T> inline clipp::group
+template <class T, detail::enable_if_t<!std::is_same<T, bool>{}> = nullptr>
+inline clipp::group
 option(nlohmann::json& obj, std::vector<std::string>&& flags, const T init, const std::string& doc="", const std::string& label="arg") {
-    const char* key = flags.back().c_str();
+    const auto key = flags.back();
     obj[key] = init;
     return (
       clipp::option(std::move(flags)) &
-      clipp::value(detail::filter_type(init), label).call(detail::set<T>(obj, key))
-    ) % detail::doc_default(obj[key], doc);
+      clipp::value(detail::filter_type(init), label)
+        .call(detail::set<T>(obj, key))
+    ) % detail::doc_default(init, doc);
 }
 
-template <class T> inline clipp::group
+template <class T, detail::enable_if_t<!std::is_same<T, bool>{}> = nullptr>
+inline clipp::group
 option(nlohmann::json& obj, std::vector<std::string>&& flags, T* target, const std::string& doc="", const std::string& label="arg") {
-    auto group = option(obj, std::move(flags), *target, doc, label);
-    auto& value = group.back().as_param();
-    value.call(clipp::set(*target));
-    return group;
+    const auto key = flags.back();
+    obj[key] = *target;
+    return (
+      clipp::option(std::move(flags)) &
+      clipp::value(detail::filter_type(*target), label)
+        .call(detail::set<T>(obj, key))
+        .set(*target)
+    ) % detail::doc_default(*target, doc);
 }
 
 inline clipp::parameter
-option_bool(nlohmann::json& obj, std::vector<std::string>&& flags, const std::string& doc="") {
-    const char* key = flags.back().c_str();
-    obj[key] = false;
+option(nlohmann::json& obj, std::vector<std::string>&& flags, const bool init=false, const std::string& doc=" ") {
+    const auto key = flags.back();
+    obj[key] = init;
     return clipp::option(std::move(flags)).call(detail::set<bool>(obj, key)).doc(doc);
+}
+
+inline clipp::parameter
+option(nlohmann::json& obj, std::vector<std::string>&& flags, bool* target, const std::string& doc=" ") {
+    const auto key = flags.back();
+    obj[key] = *target;
+    return clipp::option(std::move(flags)).call(detail::set<bool>(obj, key)).set(*target).doc(doc);
 }
 
 inline clipp::doc_formatting doc_format() {
