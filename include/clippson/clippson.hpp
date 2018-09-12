@@ -41,6 +41,18 @@ inline nonempty filter_type(T) {
 }
 
 template <class T> inline
+std::ostream& operator<<(std::ostream& ost, const std::vector<T>& v) {
+    ost << "[";
+    auto it = v.begin();
+    if (it != v.end()) ost << *it;
+    for (++it; it != v.end(); ++it) {
+        ost << "," << *it;
+    }
+    ost << "]";
+    return ost;
+}
+
+template <class T> inline
 std::string doc_default(const T& x, const std::string& doc) {
     std::ostringstream oss;
     oss << doc << " (=" << x << ")";
@@ -95,6 +107,12 @@ std::function<void(const char*)> set<double>(nlohmann::json& obj, const std::str
     return [&item](const char* s){item = std::stod(s);};
 }
 
+template <class T>
+struct is_vector : std::false_type {};
+
+template <class T>
+struct is_vector<std::vector<T>> : std::true_type {};
+
 } // namespace detail
 
 template <class T, detail::enable_if_t<!std::is_same<T, bool>{}> = nullptr>
@@ -103,6 +121,7 @@ option(std::vector<std::string>&& flags, T* target, const std::string& doc="", c
     return (
       clipp::option(std::move(flags)) &
       clipp::value(detail::filter_type(*target), label, *target)
+        .repeatable(detail::is_vector<T>{})
     ) % detail::doc_default(*target, doc);
 }
 
