@@ -59,59 +59,50 @@ std::string doc_default(const T& x, const std::string& doc) {
     return oss.str();
 }
 
-template <typename T> inline
-std::function<void(const char*)> set(nlohmann::json& obj, const std::string& key) {
-    auto& item = obj.at(key);
-    return [&item](const char* s){item = s;};
-}
+template <class T> inline T
+sto(const char*) {return T{};}
 
-template <> inline
-std::function<void(const char*)> set<bool>(nlohmann::json& obj, const std::string& key) {
-    auto& item = obj.at(key);
-    return [&](const char*){item = true;};
-}
+template <> inline std::string
+sto<std::string>(const char* s) {return s;}
 
-template <> inline
-std::function<void(const char*)> set<int>(nlohmann::json& obj, const std::string& key) {
-    auto& item = obj.at(key);
-    return [&item](const char* s){item = std::stoi(s);};
-}
+template <> inline bool
+sto<bool>(const char*) {return true;}
 
-template <> inline
-std::function<void(const char*)> set<long>(nlohmann::json& obj, const std::string& key) {
-    auto& item = obj.at(key);
-    return [&item](const char* s){item = std::stol(s);};
-}
+template <> inline int
+sto<int>(const char* s) {return std::stoi(s);}
 
-template <> inline
-std::function<void(const char*)> set<unsigned>(nlohmann::json& obj, const std::string& key) {
-    auto& item = obj.at(key);
-    return [&item](const char* s){item = static_cast<unsigned>(std::stoul(s));};
-}
+template <> inline long
+sto<long>(const char* s) {return std::stol(s);}
 
-template <> inline
-std::function<void(const char*)> set<unsigned long>(nlohmann::json& obj, const std::string& key) {
-    auto& item = obj.at(key);
-    return [&item](const char* s){item = std::stoul(s);};
-}
+template <> inline unsigned
+sto<unsigned>(const char* s) {return static_cast<unsigned>(std::stoul(s));}
 
-template <> inline
-std::function<void(const char*)> set<unsigned long long>(nlohmann::json& obj, const std::string& key) {
-    auto& item = obj.at(key);
-    return [&item](const char* s){item = std::stoull(s);};
-}
+template <> inline unsigned long
+sto<unsigned long>(const char* s) {return std::stoul(s);}
 
-template <> inline
-std::function<void(const char*)> set<double>(nlohmann::json& obj, const std::string& key) {
-    auto& item = obj.at(key);
-    return [&item](const char* s){item = std::stod(s);};
-}
+template <> inline unsigned long long
+sto<unsigned long long>(const char* s) {return std::stoull(s);}
+
+template <> inline double
+sto<double>(const char* s) {return std::stod(s);}
 
 template <class T>
 struct is_vector : std::false_type {};
 
 template <class T>
 struct is_vector<std::vector<T>> : std::true_type {};
+
+template <class T, enable_if_t<!is_vector<T>{}> = nullptr> inline
+std::function<void(const char*)> set(nlohmann::json& obj, const std::string& key) {
+    auto& item = obj.at(key);
+    return [&item](const char* s){item = sto<T>(s);};
+}
+
+template <class T, enable_if_t<is_vector<T>{}> = nullptr> inline
+std::function<void(const char*)> set(nlohmann::json& obj, const std::string& key) {
+    auto& item = obj.at(key);
+    return [&item](const char* s){item.push_back(sto<typename T::value_type>(s));};
+}
 
 } // namespace detail
 
@@ -138,6 +129,7 @@ option(nlohmann::json& obj, std::vector<std::string>&& flags, const T init, cons
     return (
       clipp::option(std::move(flags)) &
       clipp::value(detail::filter_type(init), label)
+        .repeatable(detail::is_vector<T>{})
         .call(detail::set<T>(obj, key))
     ) % detail::doc_default(init, doc);
 }
@@ -150,6 +142,7 @@ option(nlohmann::json& obj, std::vector<std::string>&& flags, T* target, const s
     return (
       clipp::option(std::move(flags)) &
       clipp::value(detail::filter_type(*target), label)
+        .repeatable(detail::is_vector<T>{})
         .call(detail::set<T>(obj, key))
         .set(*target)
     ) % detail::doc_default(*target, doc);
