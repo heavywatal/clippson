@@ -14,29 +14,24 @@ namespace wtl {
 namespace detail {
 
 struct nonempty {
-    bool operator()(const std::string& s) {return !s.empty();}
+    bool operator()(const std::string& s) const noexcept {return !s.empty();}
 };
 
 template <bool Condition>
 using enable_if_t = typename std::enable_if<Condition, std::nullptr_t>::type;
 
 template <class T, enable_if_t<std::is_integral<T>{}> = nullptr>
-inline clipp::match::integers filter_type(T) {
+inline clipp::match::integers filter_type() {
     return clipp::match::integers{};
 }
 
 template <class T, enable_if_t<std::is_floating_point<T>{}> = nullptr>
-inline clipp::match::numbers filter_type(T) {
+inline clipp::match::numbers filter_type() {
     return clipp::match::numbers{};
 }
 
-template <class T, enable_if_t<!std::is_trivial<T>{}> = nullptr>
-inline nonempty filter_type(T) {
-    return nonempty{};
-}
-
-template <class T, enable_if_t<std::is_pointer<T>{}> = nullptr>
-inline nonempty filter_type(T) {
+template <class T, enable_if_t<!std::is_integral<T>{} && !std::is_floating_point<T>{}> = nullptr>
+inline nonempty filter_type() {
     return nonempty{};
 }
 
@@ -111,7 +106,7 @@ inline clipp::group
 option(std::vector<std::string>&& flags, T* target, const std::string& doc="", const std::string& label="arg") {
     return (
       clipp::option(std::move(flags)) &
-      clipp::value(detail::filter_type(*target), label, *target)
+      clipp::value(detail::filter_type<T>(), label, *target)
         .repeatable(detail::is_vector<T>{})
     ) % detail::doc_default(*target, doc);
 }
@@ -128,7 +123,7 @@ option(nlohmann::json& obj, std::vector<std::string>&& flags, const T init, cons
     obj[key] = init;
     return (
       clipp::option(std::move(flags)) &
-      clipp::value(detail::filter_type(init), label)
+      clipp::value(detail::filter_type<T>(), label)
         .repeatable(detail::is_vector<T>{})
         .call(detail::set<T>(obj, key))
     ) % detail::doc_default(init, doc);
@@ -141,7 +136,7 @@ option(nlohmann::json& obj, std::vector<std::string>&& flags, T* target, const s
     obj[key] = *target;
     return (
       clipp::option(std::move(flags)) &
-      clipp::value(detail::filter_type(*target), label)
+      clipp::value(detail::filter_type<T>(), label)
         .repeatable(detail::is_vector<T>{})
         .call(detail::set<T>(obj, key))
         .set(*target)
