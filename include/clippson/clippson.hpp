@@ -101,6 +101,7 @@ inline clipp::group
 option(std::vector<std::string>&& flags, T* target, const std::string& doc="", const std::string& label="arg") {
     const auto key = detail::lstrip(flags.back());
     return (
+      (clipp::option("--" + key + "=") & detail::value<T>(label).set(*target)),
       (clipp::option(std::move(flags)) & detail::value<T>(label).set(*target))
         % detail::doc_default(*target, doc)
    );
@@ -117,6 +118,7 @@ option(nlohmann::json& obj, std::vector<std::string>&& flags, const T init, cons
     const auto key = detail::lstrip(flags.back());
     auto& target_js = obj[key] = init;
     return (
+      (clipp::option("--" + key + "=") & detail::value<T>(target_js, label)),
       (clipp::option(std::move(flags)) & detail::value<T>(target_js, label))
         % detail::doc_default(init, doc)
     );
@@ -128,6 +130,7 @@ option(nlohmann::json& obj, std::vector<std::string>&& flags, T* target, const s
     const auto key = detail::lstrip(flags.back());
     auto& target_js = obj[key] = *target;
     return (
+      (clipp::option("--" + key + "=") & detail::value<T>(target_js, label).set(*target)),
       (clipp::option(std::move(flags)) & detail::value<T>(target_js, label).set(*target))
         % detail::doc_default(*target, doc)
     );
