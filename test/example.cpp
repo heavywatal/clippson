@@ -42,7 +42,7 @@ int main(int argc, char* argv[]) {
     auto to_json = (
       wtl::option(vm, {"--version"}, false, "Print version"),
       wtl::option(vm, {"--whoami"}, "24601"),
-      wtl::option(vm, {"--year"}, 2112)
+      wtl::option(vm, {"--year", "-y"}, 2112)
     ).doc("Notified to json:");
 
     Parameters params;

@@ -6,6 +6,7 @@
 #include "json.hpp"
 
 #include <type_traits>
+#include <algorithm>
 #include <vector>
 #include <string>
 
@@ -90,8 +91,20 @@ value<const char*>(nlohmann::json& target, const std::string label) {
     return value<const char*>(label).call(detail::set<std::string>(target));
 }
 
-inline std::string lstrip(const std::string& s, const char* chars="-") {
-    return s.substr(s.find_first_not_of(chars));
+inline std::string lstrip(const std::string& s) {
+    return s.substr(s.find_first_not_of('-'));
+}
+
+inline size_t length(const std::string& s) {
+    return s.size() - s.find_first_not_of('-');
+}
+
+inline std::string longest(const std::vector<std::string>& args) {
+    auto it = std::max_element(args.begin(), args.end(),
+                  [](const std::string& lhs, const std::string& rhs) {
+                      return length(lhs) < length(rhs);
+                  });
+    return lstrip(*it);
 }
 
 } // namespace detail
@@ -99,7 +112,7 @@ inline std::string lstrip(const std::string& s, const char* chars="-") {
 template <class T, detail::enable_if_t<!std::is_same<T, bool>{}> = nullptr>
 inline clipp::group
 option(std::vector<std::string>&& flags, T* target, const std::string& doc="", const std::string& label="arg") {
-    const auto key = detail::lstrip(flags.back());
+    const auto key = detail::longest(flags);
     return (
       (clipp::option("--" + key + "=") & detail::value<T>(label).set(*target)),
       (clipp::option(std::move(flags)) & detail::value<T>(label).set(*target))
@@ -115,7 +128,7 @@ option(std::vector<std::string>&& flags, bool* target, const std::string& doc=" 
 template <class T, detail::enable_if_t<!std::is_same<T, bool>{}> = nullptr>
 inline clipp::group
 option(nlohmann::json& obj, std::vector<std::string>&& flags, const T init, const std::string& doc="", const std::string& label="arg") {
-    const auto key = detail::lstrip(flags.back());
+    const auto key = detail::longest(flags);
     auto& target_js = obj[key] = init;
     return (
       (clipp::option("--" + key + "=") & detail::value<T>(target_js, label)),
@@ -127,7 +140,7 @@ option(nlohmann::json& obj, std::vector<std::string>&& flags, const T init, cons
 template <class T, detail::enable_if_t<!std::is_same<T, bool>{} && !std::is_same<T, const char>{}> = nullptr>
 inline clipp::group
 option(nlohmann::json& obj, std::vector<std::string>&& flags, T* target, const std::string& doc="", const std::string& label="arg") {
-    const auto key = detail::lstrip(flags.back());
+    const auto key = detail::longest(flags);
     auto& target_js = obj[key] = *target;
     return (
       (clipp::option("--" + key + "=") & detail::value<T>(target_js, label).set(*target)),
@@ -138,14 +151,14 @@ option(nlohmann::json& obj, std::vector<std::string>&& flags, T* target, const s
 
 inline clipp::parameter
 option(nlohmann::json& obj, std::vector<std::string>&& flags, const bool init=false, const std::string& doc=" ") {
-    const auto key = detail::lstrip(flags.back());
+    const auto key = detail::longest(flags);
     auto& target_js = obj[key] = init;
     return clipp::option(std::move(flags)).call(detail::set<bool>(target_js)).doc(doc);
 }
 
 inline clipp::parameter
 option(nlohmann::json& obj, std::vector<std::string>&& flags, bool* target, const std::string& doc=" ") {
-    const auto key = detail::lstrip(flags.back());
+    const auto key = detail::longest(flags);
     auto& target_js = obj[key] = *target;
     return clipp::option(std::move(flags)).call(detail::set<bool>(target_js)).set(*target).doc(doc);
 }
