@@ -39,15 +39,15 @@ int main(int argc, char* argv[]) {
     ).doc("Notified to targets:");
 
     nlohmann::json vm;
-    auto to_json = clipp::with_prefixes_short_long("-", "--",
-      wtl::option(vm, {"version"}, false, "Print version"),
-      wtl::option(vm, {"whoami"}, 24601)
+    auto to_json = (
+      wtl::option(vm, {"--version"}, false, "Print version"),
+      wtl::option(vm, {"--whoami"}, 24601)
     ).doc("Notified to json:");
 
     Parameters params;
     auto to_json_and_targets = params.cli(vm);
 
-    auto cli = (
+    auto cli = clipp::joinable(
       to_targets,
       to_json,
       to_json_and_targets

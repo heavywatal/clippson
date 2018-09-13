@@ -99,6 +99,10 @@ std::function<void(const char*)> set(nlohmann::json& obj, const std::string& key
     return [&item](const char* s){item.push_back(sto<typename T::value_type>(s));};
 }
 
+inline std::string lstrip(const std::string& s, const char* chars="-") {
+    return s.substr(s.find_first_not_of(chars));
+}
+
 } // namespace detail
 
 template <class T, detail::enable_if_t<!std::is_same<T, bool>{}> = nullptr>
@@ -119,7 +123,7 @@ option(std::vector<std::string>&& flags, bool* target, const std::string& doc=" 
 template <class T, detail::enable_if_t<!std::is_same<T, bool>{}> = nullptr>
 inline clipp::group
 option(nlohmann::json& obj, std::vector<std::string>&& flags, const T init, const std::string& doc="", const std::string& label="arg") {
-    const auto key = flags.back();
+    const auto key = detail::lstrip(flags.back());
     obj[key] = init;
     return (
       clipp::option(std::move(flags)) &
@@ -132,7 +136,7 @@ option(nlohmann::json& obj, std::vector<std::string>&& flags, const T init, cons
 template <class T, detail::enable_if_t<!std::is_same<T, bool>{}> = nullptr>
 inline clipp::group
 option(nlohmann::json& obj, std::vector<std::string>&& flags, T* target, const std::string& doc="", const std::string& label="arg") {
-    const auto key = flags.back();
+    const auto key = detail::lstrip(flags.back());
     obj[key] = *target;
     return (
       clipp::option(std::move(flags)) &
@@ -145,14 +149,14 @@ option(nlohmann::json& obj, std::vector<std::string>&& flags, T* target, const s
 
 inline clipp::parameter
 option(nlohmann::json& obj, std::vector<std::string>&& flags, const bool init=false, const std::string& doc=" ") {
-    const auto key = flags.back();
+    const auto key = detail::lstrip(flags.back());
     obj[key] = init;
     return clipp::option(std::move(flags)).call(detail::set<bool>(obj, key)).doc(doc);
 }
 
 inline clipp::parameter
 option(nlohmann::json& obj, std::vector<std::string>&& flags, bool* target, const std::string& doc=" ") {
-    const auto key = flags.back();
+    const auto key = detail::lstrip(flags.back());
     obj[key] = *target;
     return clipp::option(std::move(flags)).call(detail::set<bool>(obj, key)).set(*target).doc(doc);
 }
