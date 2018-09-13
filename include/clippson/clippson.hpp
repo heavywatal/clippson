@@ -106,7 +106,20 @@ option(nlohmann::json& obj, std::vector<std::string>&& flags, const T init, cons
     ) % detail::doc_default(init, doc);
 }
 
-template <class T, detail::enable_if_t<!std::is_same<T, bool>{}> = nullptr>
+template <>
+inline clipp::group
+option<const char*>(nlohmann::json& obj, std::vector<std::string>&& flags, const char* const init, const std::string& doc, const std::string& label) {
+    const auto key = detail::lstrip(flags.back());
+    obj[key] = std::string(init);
+    return (
+      clipp::option(std::move(flags)) &
+      clipp::value(detail::filter_type<const char*>(), label)
+        .repeatable(detail::is_vector<const char*>{})
+        .call(detail::set<std::string>(obj, key))
+    ) % detail::doc_default(init, doc);
+}
+
+template <class T, detail::enable_if_t<!std::is_same<T, bool>{} && !std::is_same<T, const char>{}> = nullptr>
 inline clipp::group
 option(nlohmann::json& obj, std::vector<std::string>&& flags, T* target, const std::string& doc="", const std::string& label="arg") {
     const auto key = detail::lstrip(flags.back());
