@@ -61,15 +61,33 @@ template <class T>
 struct is_vector<std::vector<T>> : std::true_type {};
 
 template <class T, enable_if_t<!is_vector<T>{}> = nullptr> inline
-std::function<void(const char*)> set(nlohmann::json& obj, const std::string& key) {
-    auto& item = obj.at(key);
-    return [&item](const char* s){item = clipp::detail::make<T>::from(s);};
+std::function<void(const char*)> set(nlohmann::json& target) {
+    return [&target](const char* s){
+        target = clipp::detail::make<T>::from(s);
+    };
 }
 
 template <class T, enable_if_t<is_vector<T>{}> = nullptr> inline
-std::function<void(const char*)> set(nlohmann::json& obj, const std::string& key) {
-    auto& item = obj.at(key);
-    return [&item](const char* s){item.push_back(clipp::detail::make<typename T::value_type>::from(s));};
+std::function<void(const char*)> set(nlohmann::json& target) {
+    return [&target](const char* s){
+        target.push_back(clipp::detail::make<typename T::value_type>::from(s));
+    };
+}
+
+template <class T> inline clipp::parameter
+value(const std::string label="arg") {
+    return clipp::value(detail::filter_type<T>(), label)
+      .repeatable(detail::is_vector<T>{});
+}
+
+template <class T> inline clipp::parameter
+value(nlohmann::json& target, const std::string label="arg") {
+    return value<T>(label).call(detail::set<T>(target));
+}
+
+template <> inline clipp::parameter
+value<const char*>(nlohmann::json& target, const std::string label) {
+    return value<const char*>(label).call(detail::set<std::string>(target));
 }
 
 inline std::string lstrip(const std::string& s, const char* chars="-") {
@@ -81,11 +99,11 @@ inline std::string lstrip(const std::string& s, const char* chars="-") {
 template <class T, detail::enable_if_t<!std::is_same<T, bool>{}> = nullptr>
 inline clipp::group
 option(std::vector<std::string>&& flags, T* target, const std::string& doc="", const std::string& label="arg") {
+    const auto key = detail::lstrip(flags.back());
     return (
-      clipp::option(std::move(flags)) &
-      clipp::value(detail::filter_type<T>(), label, *target)
-        .repeatable(detail::is_vector<T>{})
-    ) % detail::doc_default(*target, doc);
+      (clipp::option(std::move(flags)) & detail::value<T>(label).set(*target))
+        % detail::doc_default(*target, doc)
+   );
 }
 
 inline clipp::parameter
@@ -97,54 +115,36 @@ template <class T, detail::enable_if_t<!std::is_same<T, bool>{}> = nullptr>
 inline clipp::group
 option(nlohmann::json& obj, std::vector<std::string>&& flags, const T init, const std::string& doc="", const std::string& label="arg") {
     const auto key = detail::lstrip(flags.back());
-    obj[key] = init;
+    auto& target_js = obj[key] = init;
     return (
-      clipp::option(std::move(flags)) &
-      clipp::value(detail::filter_type<T>(), label)
-        .repeatable(detail::is_vector<T>{})
-        .call(detail::set<T>(obj, key))
-    ) % detail::doc_default(init, doc);
-}
-
-template <>
-inline clipp::group
-option<const char*>(nlohmann::json& obj, std::vector<std::string>&& flags, const char* const init, const std::string& doc, const std::string& label) {
-    const auto key = detail::lstrip(flags.back());
-    obj[key] = std::string(init);
-    return (
-      clipp::option(std::move(flags)) &
-      clipp::value(detail::filter_type<const char*>(), label)
-        .repeatable(detail::is_vector<const char*>{})
-        .call(detail::set<std::string>(obj, key))
-    ) % detail::doc_default(init, doc);
+      (clipp::option(std::move(flags)) & detail::value<T>(target_js, label))
+        % detail::doc_default(init, doc)
+    );
 }
 
 template <class T, detail::enable_if_t<!std::is_same<T, bool>{} && !std::is_same<T, const char>{}> = nullptr>
 inline clipp::group
 option(nlohmann::json& obj, std::vector<std::string>&& flags, T* target, const std::string& doc="", const std::string& label="arg") {
     const auto key = detail::lstrip(flags.back());
-    obj[key] = *target;
+    auto& target_js = obj[key] = *target;
     return (
-      clipp::option(std::move(flags)) &
-      clipp::value(detail::filter_type<T>(), label)
-        .repeatable(detail::is_vector<T>{})
-        .call(detail::set<T>(obj, key))
-        .set(*target)
-    ) % detail::doc_default(*target, doc);
+      (clipp::option(std::move(flags)) & detail::value<T>(target_js, label).set(*target))
+        % detail::doc_default(*target, doc)
+    );
 }
 
 inline clipp::parameter
 option(nlohmann::json& obj, std::vector<std::string>&& flags, const bool init=false, const std::string& doc=" ") {
     const auto key = detail::lstrip(flags.back());
-    obj[key] = init;
-    return clipp::option(std::move(flags)).call(detail::set<bool>(obj, key)).doc(doc);
+    auto& target_js = obj[key] = init;
+    return clipp::option(std::move(flags)).call(detail::set<bool>(target_js)).doc(doc);
 }
 
 inline clipp::parameter
 option(nlohmann::json& obj, std::vector<std::string>&& flags, bool* target, const std::string& doc=" ") {
     const auto key = detail::lstrip(flags.back());
-    obj[key] = *target;
-    return clipp::option(std::move(flags)).call(detail::set<bool>(obj, key)).set(*target).doc(doc);
+    auto& target_js = obj[key] = *target;
+    return clipp::option(std::move(flags)).call(detail::set<bool>(target_js)).set(*target).doc(doc);
 }
 
 inline clipp::doc_formatting doc_format() {
