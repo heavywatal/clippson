@@ -76,13 +76,13 @@ std::function<void(const char*)> set(nlohmann::json& target) {
 }
 
 template <class T> inline clipp::parameter
-value(const std::string label="arg") {
+value(const std::string label="") {
     return clipp::value(detail::filter_type<T>(), label)
       .repeatable(detail::is_vector<T>{});
 }
 
 template <class T> inline clipp::parameter
-value(nlohmann::json& target, const std::string label="arg") {
+value(nlohmann::json& target, const std::string label="") {
     return value<T>(label).call(detail::set<T>(target));
 }
 
@@ -111,7 +111,7 @@ inline std::string longest(const std::vector<std::string>& args) {
 
 template <class T, detail::enable_if_t<!std::is_same<T, bool>{}> = nullptr>
 inline clipp::group
-option(std::vector<std::string>&& flags, T* target, const std::string& doc="", const std::string& label="arg") {
+option(std::vector<std::string>&& flags, T* target, const std::string& doc="", const std::string& label="") {
     const auto key = detail::longest(flags);
     return (
       (clipp::option("--" + key + "=") & detail::value<T>(label).set(*target)),
@@ -127,7 +127,7 @@ option(std::vector<std::string>&& flags, bool* target, const std::string& doc=" 
 
 template <class T, detail::enable_if_t<!std::is_same<T, bool>{}> = nullptr>
 inline clipp::group
-option(nlohmann::json& obj, std::vector<std::string>&& flags, const T init, const std::string& doc="", const std::string& label="arg") {
+option(nlohmann::json& obj, std::vector<std::string>&& flags, const T init, const std::string& doc="", const std::string& label="") {
     const auto key = detail::longest(flags);
     auto& target_js = obj[key] = init;
     return (
@@ -139,7 +139,7 @@ option(nlohmann::json& obj, std::vector<std::string>&& flags, const T init, cons
 
 template <class T, detail::enable_if_t<!std::is_same<T, bool>{} && !std::is_same<T, const char>{}> = nullptr>
 inline clipp::group
-option(nlohmann::json& obj, std::vector<std::string>&& flags, T* target, const std::string& doc="", const std::string& label="arg") {
+option(nlohmann::json& obj, std::vector<std::string>&& flags, T* target, const std::string& doc="", const std::string& label="") {
     const auto key = detail::longest(flags);
     auto& target_js = obj[key] = *target;
     return (
@@ -170,6 +170,7 @@ inline clipp::doc_formatting doc_format() {
       .last_column(80)
       .indent_size(2)
       .flag_separator(",")
+      .empty_label("arg")
     ;
 }
 
