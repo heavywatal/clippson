@@ -232,14 +232,17 @@ clipp::parsing_result parse(const clipp::group& cli, Args&&... args) {
 inline clipp::arg_list arg_list(const nlohmann::json& obj) {
     clipp::arg_list args;
     for (auto it = obj.begin(); it != obj.end(); ++it) {
-        if (it->is_boolean() && !it.value()) continue;
-        if (it->is_array() && it.value().empty()) continue;
-        args.push_back("--" + it.key());
-        if (it->is_array()) {
+        if (it->is_boolean()) {
+            if (!it.value()) continue;
+            args.push_back("--" + it.key());
+        } else if (it->is_array()) {
+            if (it.value().empty()) continue;
+            args.push_back("--" + it.key());
             for (const auto& x: it.value()) {
                 args.push_back(detail::to_string(x));
             }
         } else {
+            args.push_back("--" + it.key());
             args.push_back(detail::to_string(it.value()));
         }
     }
