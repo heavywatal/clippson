@@ -5,10 +5,12 @@
 #include "clipp.h"
 #include "json.hpp"
 
+#include <stdexcept>
 #include <type_traits>
 #include <algorithm>
 #include <vector>
 #include <string>
+#include <sstream>
 
 namespace wtl {
 
@@ -172,6 +174,26 @@ inline clipp::doc_formatting doc_format() {
       .flag_separator(",")
       .empty_label("arg")
     ;
+}
+
+template <class Stream> inline
+Stream& debug_print(Stream& ost, const clipp::parsing_result& parsed, const clipp::group& cli, const clipp::doc_formatting& fmt = doc_format()) {
+    ost << "\nParsing result:\n";
+    clipp::debug::print(ost, parsed);
+    ost << "\nUsage:\n";
+    ost << clipp::documentation(cli, fmt) << "\n";
+    return ost;
+}
+
+template <class... Args> inline
+clipp::parsing_result parse(const clipp::group& cli, Args&&... args) {
+    auto parsed = clipp::parse(std::forward<Args>(args)..., cli);
+    if (!parsed) {
+        std::ostringstream oss;
+        debug_print(oss, parsed, cli);
+        throw std::runtime_error(oss.str());
+    }
+    return parsed;
 }
 
 }  // namespace wtl

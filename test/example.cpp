@@ -52,13 +52,7 @@ int main(int argc, char* argv[]) {
     );
     std::string default_values = vm.dump(2);
     auto fmt = wtl::doc_format();
-    auto parsed = clipp::parse(argc, argv, cli);
-    clipp::debug::print(std::cerr, parsed);
-    if (!parsed) {
-        std::cout << clipp::documentation(cli, fmt) << "\n";
-        std::cout << "Error: parsing failed\n";
-        return 1;
-    }
+    wtl::parse(cli, argc, argv);
     if (help) {
         std::cout << clipp::documentation(cli, fmt) << "\n";
         return 0;
