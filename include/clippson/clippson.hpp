@@ -174,15 +174,6 @@ inline clipp::doc_formatting doc_format() {
     ;
 }
 
-inline std::ostream& usage(
-  std::ostream& ost,
-  const clipp::group& cli,
-  const std::string& program="PROGRAM",
-  clipp::doc_formatting fmt=doc_format()) {
-    return ost << clipp::usage_lines(cli, program, fmt) << "\n\n"
-               << clipp::documentation(cli, fmt) << "\n";
-}
-
 }  // namespace wtl
 
 #endif /* WTL_CLIPPSON_HPP_ */

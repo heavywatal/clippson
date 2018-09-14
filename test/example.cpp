@@ -28,9 +28,6 @@ struct Parameters {
 };
 
 int main(int argc, char* argv[]) {
-    const auto program = argv[0];
-    std::vector<std::string> arguments(argv + 1, argv + argc);
-
     bool help = false;
     int answer = 42;
     auto to_targets = clipp::with_prefixes_short_long("-", "--",
@@ -54,15 +51,16 @@ int main(int argc, char* argv[]) {
       to_json_and_targets
     );
     std::string default_values = vm.dump(2);
-    auto parsed = clipp::parse(arguments, cli);
+    auto fmt = wtl::doc_format();
+    auto parsed = clipp::parse(argc, argv, cli);
     clipp::debug::print(std::cerr, parsed);
     if (!parsed) {
-        wtl::usage(std::cout, cli, program)
-          << "Error: unknown argument\n";
+        std::cout << clipp::documentation(cli, fmt) << "\n";
+        std::cout << "Error: parsing failed\n";
         return 1;
     }
     if (help) {
-        wtl::usage(std::cout, cli, program);
+        std::cout << clipp::documentation(cli, fmt) << "\n";
         return 0;
     }
     if (vm["version"]) {
