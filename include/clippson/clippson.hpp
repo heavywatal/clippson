@@ -86,6 +86,16 @@ std::function<void(const char*)> set(nlohmann::json& target) {
     };
 }
 
+template <class T, class X, enable_if_t<!is_vector<T>{}> = nullptr> inline
+std::function<void(void)> clear(X&) {
+    return [](){};
+}
+
+template <class T, class X, enable_if_t<is_vector<T>{}> = nullptr> inline
+std::function<void(void)> clear(X& target) {
+    return [&target](){target.clear();};
+}
+
 template <class T> inline clipp::parameter
 value(const std::string label="") {
     return clipp::value(detail::filter_type<T>(), label)
@@ -125,8 +135,12 @@ inline clipp::group
 option(std::vector<std::string>&& flags, T* target, const std::string& doc="", const std::string& label="") {
     const auto key = detail::longest(flags);
     return clipp::one_of(
-      (clipp::option("--" + key + "=") & detail::value<T>(label).set(*target)),
-      (clipp::option(std::move(flags)) & detail::value<T>(label).set(*target))
+      (clipp::option("--" + key + "=")
+          .call(detail::clear<T>(*target))
+        & detail::value<T>(label).set(*target)),
+      (clipp::option(std::move(flags))
+          .call(detail::clear<T>(*target))
+        & detail::value<T>(label).set(*target))
         % detail::doc_default(*target, doc)
    );
 }
@@ -142,8 +156,12 @@ option(nlohmann::json& obj, std::vector<std::string>&& flags, const T init, cons
     const auto key = detail::longest(flags);
     auto& target_js = obj[key] = init;
     return clipp::one_of(
-      (clipp::option("--" + key + "=") & detail::value<T>(target_js, label)),
-      (clipp::option(std::move(flags)) & detail::value<T>(target_js, label))
+      (clipp::option("--" + key + "=")
+          .call(detail::clear<T>(target_js))
+        & detail::value<T>(target_js, label)),
+      (clipp::option(std::move(flags))
+          .call(detail::clear<T>(target_js))
+        & detail::value<T>(target_js, label))
         % detail::doc_default(init, doc)
     );
 }
@@ -154,8 +172,14 @@ option(nlohmann::json& obj, std::vector<std::string>&& flags, T* target, const s
     const auto key = detail::longest(flags);
     auto& target_js = obj[key] = *target;
     return clipp::one_of(
-      (clipp::option("--" + key + "=") & detail::value<T>(target_js, label).set(*target)),
-      (clipp::option(std::move(flags)) & detail::value<T>(target_js, label).set(*target))
+      (clipp::option("--" + key + "=")
+          .call(detail::clear<T>(target_js))
+          .call(detail::clear<T>(*target))
+        & detail::value<T>(target_js, label).set(*target)),
+      (clipp::option(std::move(flags))
+          .call(detail::clear<T>(target_js))
+          .call(detail::clear<T>(*target))
+        & detail::value<T>(target_js, label).set(*target))
         % detail::doc_default(*target, doc)
     );
 }
