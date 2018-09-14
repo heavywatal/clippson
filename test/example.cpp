@@ -61,9 +61,13 @@ int main(int argc, char* argv[]) {
         std::cout << "clipp 1.2.0\n";
         return 0;
     }
-    std::cout << "Default values:\n"
-              << default_values << "\n";
-    std::cout << "Current values:\n"
-              << vm.dump(2) << "\n";
+    std::cout << "Default values: " << default_values << "\n";
+    std::cout << "Current values: " << vm.dump(2) << "\n";
+    auto args = wtl::arg_list(vm);
+    std::cout << argv[0];
+    for (const auto& x: args) {std::cout << " {" << x << "}";}
+    std::cout << "\n";
+    wtl::parse(cli, args);
+    std::cout << "Round trip: " << vm.dump(2) << "\n";
     std::cout << "Answer: " << answer << "\n";
 }
