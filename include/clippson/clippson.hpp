@@ -16,6 +16,26 @@ namespace wtl {
 
 namespace detail {
 
+template <bool Condition>
+using enable_if_t = typename std::enable_if<Condition, std::nullptr_t>::type;
+
+template <class T>
+struct is_vector : std::false_type {};
+
+template <class T>
+struct is_vector<std::vector<T>> : std::true_type {};
+
+template <class T> inline
+std::ostream& operator<<(std::ostream& ost, const std::vector<T>& v) {
+    if (v.empty()) return ost << "[]";
+    auto it = v.begin();
+    ost << "[" << *it;
+    for (++it; it != v.end(); ++it) {
+        ost << "," << *it;
+    }
+    return ost << "]";
+}
+
 inline std::string to_string(const nlohmann::json& x) {
     std::ostringstream oss;
     if (x.is_string()) {
@@ -26,11 +46,28 @@ inline std::string to_string(const nlohmann::json& x) {
     return oss.str();
 }
 
-template <class T>
-struct is_vector : std::false_type {};
+inline std::string lstrip(const std::string& s) {
+    return s.substr(s.find_first_not_of('-'));
+}
 
-template <class T>
-struct is_vector<std::vector<T>> : std::true_type {};
+inline size_t length(const std::string& s) {
+    return s.size() - s.find_first_not_of('-');
+}
+
+inline std::string longest(const std::vector<std::string>& args) {
+    auto it = std::max_element(args.begin(), args.end(),
+                  [](const std::string& lhs, const std::string& rhs) {
+                      return length(lhs) < length(rhs);
+                  });
+    return lstrip(*it);
+}
+
+template <class T> inline
+std::string doc_default(const T& x, const std::string& doc) {
+    std::ostringstream oss;
+    oss << doc << " (=" << x << ")";
+    return oss.str();
+}
 
 struct any {
     bool operator()(const std::string&) const noexcept {return true;}
@@ -39,9 +76,6 @@ struct any {
 struct nonempty {
     bool operator()(const std::string& s) const noexcept {return !s.empty();}
 };
-
-template <bool Condition>
-using enable_if_t = typename std::enable_if<Condition, std::nullptr_t>::type;
 
 template <class T, enable_if_t<std::is_integral<T>{}> = nullptr>
 inline clipp::match::integers filter_type() {
@@ -61,24 +95,6 @@ inline auto filter_type() -> decltype(filter_type<typename T::value_type>()) {
 template <class T, enable_if_t<!std::is_arithmetic<T>{} && !is_vector<T>{}> = nullptr>
 inline nonempty filter_type() {
     return nonempty{};
-}
-
-template <class T> inline
-std::ostream& operator<<(std::ostream& ost, const std::vector<T>& v) {
-    if (v.empty()) return ost << "[]";
-    auto it = v.begin();
-    ost << "[" << *it;
-    for (++it; it != v.end(); ++it) {
-        ost << "," << *it;
-    }
-    return ost << "]";
-}
-
-template <class T> inline
-std::string doc_default(const T& x, const std::string& doc) {
-    std::ostringstream oss;
-    oss << doc << " (=" << x << ")";
-    return oss.str();
 }
 
 template <class T> inline T
@@ -135,6 +151,8 @@ std::function<void(void)> clear(X& target) {
     return [&target](){target.clear();};
 }
 
+} // namespace detail
+
 template <class T> inline clipp::parameter
 value(const std::string& label) {
     return clipp::value(detail::filter_type<T>(), label)
@@ -146,24 +164,6 @@ template <class T, class Target, class... Rest> inline clipp::parameter
 value(const std::string& label, Target& target, Rest&... rest) {
     return value<T>(label, rest...).call(detail::set<T>(target));
 }
-
-inline std::string lstrip(const std::string& s) {
-    return s.substr(s.find_first_not_of('-'));
-}
-
-inline size_t length(const std::string& s) {
-    return s.size() - s.find_first_not_of('-');
-}
-
-inline std::string longest(const std::vector<std::string>& args) {
-    auto it = std::max_element(args.begin(), args.end(),
-                  [](const std::string& lhs, const std::string& rhs) {
-                      return length(lhs) < length(rhs);
-                  });
-    return lstrip(*it);
-}
-
-} // namespace detail
 
 template <class T, class F> inline clipp::parameter
 option(F&& flags) {
@@ -179,7 +179,7 @@ template <class T, class F, detail::enable_if_t<!std::is_same<T, bool>{}> = null
 inline clipp::group
 group(F&& flags, const std::string& label, Targets&... targets) {
     return option<T>(std::forward<F>(flags), targets...)
-           & detail::value<T>(label, targets...);
+           & value<T>(label, targets...);
 }
 
 template <class T, detail::enable_if_t<!std::is_same<T, bool>{}> = nullptr>
