@@ -175,15 +175,20 @@ option(F&& flags, Target& target, Rest&... rest) {
     return option<T>(std::forward<F>(flags), rest...).call(detail::clear<T>(target));
 }
 
+template <class T, class F, detail::enable_if_t<!std::is_same<T, bool>{}> = nullptr, class... Targets>
+inline clipp::group
+group(F&& flags, const std::string& label, Targets&... targets) {
+    return option<T>(std::forward<F>(flags), targets...)
+           & detail::value<T>(label, targets...);
+}
+
 template <class T, detail::enable_if_t<!std::is_same<T, bool>{}> = nullptr>
 inline clipp::group
 option(std::vector<std::string>&& flags, T* target, const std::string& doc="", const std::string& label="") {
     const auto key = detail::longest(flags);
     return clipp::one_of(
-      (option<T>("--" + key + "=", *target)
-        & detail::value<T>(label, *target)),
-      (option<T>(std::move(flags), *target)
-        & detail::value<T>(label, *target))
+      group<T>("--" + key + "=", label, *target),
+      group<T>(std::move(flags), label, *target)
         % detail::doc_default(*target, doc)
    );
 }
@@ -199,10 +204,8 @@ option(nlohmann::json& obj, std::vector<std::string>&& flags, const T init, cons
     const auto key = detail::longest(flags);
     auto& target_js = obj[key] = init;
     return clipp::one_of(
-      (option<T>("--" + key + "=", target_js)
-        & detail::value<T>(label, target_js)),
-      (option<T>(std::move(flags), target_js)
-        & detail::value<T>(label, target_js))
+      group<T>("--" + key + "=", label, target_js),
+      group<T>(std::move(flags), label, target_js)
         % detail::doc_default(init, doc)
     );
 }
@@ -213,10 +216,8 @@ option(nlohmann::json& obj, std::vector<std::string>&& flags, T* target, const s
     const auto key = detail::longest(flags);
     auto& target_js = obj[key] = *target;
     return clipp::one_of(
-      (option<T>("--" + key + "=", target_js, *target)
-        & detail::value<T>(label, target_js, *target)),
-      (option<T>(std::move(flags), target_js, *target)
-        & detail::value<T>(label, target_js, *target))
+      group<T>("--" + key + "=", label, target_js, *target),
+      group<T>(std::move(flags), label, target_js, *target)
         % detail::doc_default(*target, doc)
     );
 }
