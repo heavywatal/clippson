@@ -26,6 +26,10 @@ inline std::string to_string(const nlohmann::json& x) {
     return oss.str();
 }
 
+struct any {
+    bool operator()(const std::string&) const noexcept {return true;}
+};
+
 struct nonempty {
     bool operator()(const std::string& s) const noexcept {return !s.empty();}
 };
@@ -43,7 +47,7 @@ inline clipp::match::numbers filter_type() {
     return clipp::match::numbers{};
 }
 
-template <class T, enable_if_t<!std::is_integral<T>{} && !std::is_floating_point<T>{}> = nullptr>
+template <class T, enable_if_t<!std::is_arithmetic<T>{}> = nullptr>
 inline nonempty filter_type() {
     return nonempty{};
 }
@@ -86,12 +90,12 @@ std::function<void(const char*)> set(nlohmann::json& target) {
     };
 }
 
-template <class T, class X, enable_if_t<!is_vector<T>{}> = nullptr> inline
+template <class T, class X, enable_if_t<std::is_arithmetic<T>{}> = nullptr> inline
 std::function<void(void)> clear(X&) {
     return [](){};
 }
 
-template <class T, class X, enable_if_t<is_vector<T>{}> = nullptr> inline
+template <class T, class X, enable_if_t<!std::is_arithmetic<T>{}> = nullptr> inline
 std::function<void(void)> clear(X& target) {
     return [&target](){target.clear();};
 }
@@ -99,6 +103,7 @@ std::function<void(void)> clear(X& target) {
 template <class T> inline clipp::parameter
 value(const std::string label="") {
     return clipp::value(detail::filter_type<T>(), label)
+      .required(std::is_arithmetic<T>{})
       .repeatable(detail::is_vector<T>{});
 }
 
