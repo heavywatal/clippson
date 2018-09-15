@@ -165,16 +165,24 @@ inline std::string longest(const std::vector<std::string>& args) {
 
 } // namespace detail
 
+template <class T, class F> inline clipp::parameter
+option(F&& flags) {
+    return clipp::option(std::forward<F>(flags));
+}
+
+template <class T, class F, class Target, class... Rest> inline clipp::parameter
+option(F&& flags, Target& target, Rest&... rest) {
+    return option<T>(std::forward<F>(flags), rest...).call(detail::clear<T>(target));
+}
+
 template <class T, detail::enable_if_t<!std::is_same<T, bool>{}> = nullptr>
 inline clipp::group
 option(std::vector<std::string>&& flags, T* target, const std::string& doc="", const std::string& label="") {
     const auto key = detail::longest(flags);
     return clipp::one_of(
-      (clipp::option("--" + key + "=")
-          .call(detail::clear<T>(*target))
+      (option<T>("--" + key + "=", *target)
         & detail::value<T>(label, *target)),
-      (clipp::option(std::move(flags))
-          .call(detail::clear<T>(*target))
+      (option<T>(std::move(flags), *target)
         & detail::value<T>(label, *target))
         % detail::doc_default(*target, doc)
    );
@@ -191,11 +199,9 @@ option(nlohmann::json& obj, std::vector<std::string>&& flags, const T init, cons
     const auto key = detail::longest(flags);
     auto& target_js = obj[key] = init;
     return clipp::one_of(
-      (clipp::option("--" + key + "=")
-          .call(detail::clear<T>(target_js))
+      (option<T>("--" + key + "=", target_js)
         & detail::value<T>(label, target_js)),
-      (clipp::option(std::move(flags))
-          .call(detail::clear<T>(target_js))
+      (option<T>(std::move(flags), target_js)
         & detail::value<T>(label, target_js))
         % detail::doc_default(init, doc)
     );
@@ -207,13 +213,9 @@ option(nlohmann::json& obj, std::vector<std::string>&& flags, T* target, const s
     const auto key = detail::longest(flags);
     auto& target_js = obj[key] = *target;
     return clipp::one_of(
-      (clipp::option("--" + key + "=")
-          .call(detail::clear<T>(target_js))
-          .call(detail::clear<T>(*target))
+      (option<T>("--" + key + "=", target_js, *target)
         & detail::value<T>(label, target_js, *target)),
-      (clipp::option(std::move(flags))
-          .call(detail::clear<T>(target_js))
-          .call(detail::clear<T>(*target))
+      (option<T>(std::move(flags), target_js, *target)
         & detail::value<T>(label, target_js, *target))
         % detail::doc_default(*target, doc)
     );
