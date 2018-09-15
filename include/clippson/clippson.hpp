@@ -136,20 +136,15 @@ std::function<void(void)> clear(X& target) {
 }
 
 template <class T> inline clipp::parameter
-value(const std::string label="") {
+value(const std::string& label) {
     return clipp::value(detail::filter_type<T>(), label)
       .required(std::is_arithmetic<T>{})
       .repeatable(detail::is_vector<T>{});
 }
 
-template <class T> inline clipp::parameter
-value(nlohmann::json& target, const std::string label="") {
-    return value<T>(label).call(detail::set<T>(target));
-}
-
-template <> inline clipp::parameter
-value<const char*>(nlohmann::json& target, const std::string label) {
-    return value<const char*>(label).call(detail::set<std::string>(target));
+template <class T, class Target, class... Rest> inline clipp::parameter
+value(const std::string& label, Target& target, Rest&... rest) {
+    return value<T>(label, rest...).call(detail::set<T>(target));
 }
 
 inline std::string lstrip(const std::string& s) {
@@ -177,10 +172,10 @@ option(std::vector<std::string>&& flags, T* target, const std::string& doc="", c
     return clipp::one_of(
       (clipp::option("--" + key + "=")
           .call(detail::clear<T>(*target))
-        & detail::value<T>(label).set(*target)),
+        & detail::value<T>(label, *target)),
       (clipp::option(std::move(flags))
           .call(detail::clear<T>(*target))
-        & detail::value<T>(label).set(*target))
+        & detail::value<T>(label, *target))
         % detail::doc_default(*target, doc)
    );
 }
@@ -198,10 +193,10 @@ option(nlohmann::json& obj, std::vector<std::string>&& flags, const T init, cons
     return clipp::one_of(
       (clipp::option("--" + key + "=")
           .call(detail::clear<T>(target_js))
-        & detail::value<T>(target_js, label)),
+        & detail::value<T>(label, target_js)),
       (clipp::option(std::move(flags))
           .call(detail::clear<T>(target_js))
-        & detail::value<T>(target_js, label))
+        & detail::value<T>(label, target_js))
         % detail::doc_default(init, doc)
     );
 }
@@ -215,11 +210,11 @@ option(nlohmann::json& obj, std::vector<std::string>&& flags, T* target, const s
       (clipp::option("--" + key + "=")
           .call(detail::clear<T>(target_js))
           .call(detail::clear<T>(*target))
-        & detail::value<T>(target_js, label).set(*target)),
+        & detail::value<T>(label, target_js, *target)),
       (clipp::option(std::move(flags))
           .call(detail::clear<T>(target_js))
           .call(detail::clear<T>(*target))
-        & detail::value<T>(target_js, label).set(*target))
+        & detail::value<T>(label, target_js, *target))
         % detail::doc_default(*target, doc)
     );
 }
