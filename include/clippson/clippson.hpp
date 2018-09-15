@@ -81,17 +81,47 @@ std::string doc_default(const T& x, const std::string& doc) {
     return oss.str();
 }
 
-template <class T, enable_if_t<!is_vector<T>{}> = nullptr> inline
-std::function<void(const char*)> set(nlohmann::json& target) {
+template <class T> inline T
+sto(const std::string& s) {return s;}
+
+template <> inline const char*
+sto(const std::string& s) {return s.c_str();}
+
+template <> inline bool
+sto<bool>(const std::string&) {return true;}
+
+template <> inline int
+sto<int>(const std::string& s) {return std::stoi(s);}
+
+template <> inline long
+sto<long>(const std::string& s) {return std::stol(s);}
+
+template <> inline long long
+sto<long long>(const std::string& s) {return std::stoll(s);}
+
+template <> inline unsigned
+sto<unsigned>(const std::string& s) {return static_cast<unsigned>(std::stoul(s));}
+
+template <> inline unsigned long
+sto<unsigned long>(const std::string& s) {return std::stoul(s);}
+
+template <> inline unsigned long long
+sto<unsigned long long>(const std::string& s) {return std::stoull(s);}
+
+template <> inline double
+sto<double>(const std::string& s) {return std::stod(s);}
+
+template <class T, class X, enable_if_t<!is_vector<T>{}> = nullptr> inline
+std::function<void(const char*)> set(X& target) {
     return [&target](const char* s){
-        target = clipp::detail::make<T>::from(s);
+        target = sto<T>(s);
     };
 }
 
-template <class T, enable_if_t<is_vector<T>{}> = nullptr> inline
-std::function<void(const char*)> set(nlohmann::json& target) {
+template <class T, class X, enable_if_t<is_vector<T>{}> = nullptr> inline
+std::function<void(const char*)> set(X& target) {
     return [&target](const char* s){
-        target.push_back(clipp::detail::make<typename T::value_type>::from(s));
+        target.push_back(sto<typename T::value_type>(s));
     };
 }
 
