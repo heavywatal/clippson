@@ -26,6 +26,12 @@ inline std::string to_string(const nlohmann::json& x) {
     return oss.str();
 }
 
+template <class T>
+struct is_vector : std::false_type {};
+
+template <class T>
+struct is_vector<std::vector<T>> : std::true_type {};
+
 struct any {
     bool operator()(const std::string&) const noexcept {return true;}
 };
@@ -47,7 +53,12 @@ inline clipp::match::numbers filter_type() {
     return clipp::match::numbers{};
 }
 
-template <class T, enable_if_t<!std::is_arithmetic<T>{}> = nullptr>
+template <class T, enable_if_t<is_vector<T>{}> = nullptr>
+inline auto filter_type() -> decltype(filter_type<typename T::value_type>()) {
+    return filter_type<typename T::value_type>();
+}
+
+template <class T, enable_if_t<!std::is_arithmetic<T>{} && !is_vector<T>{}> = nullptr>
 inline nonempty filter_type() {
     return nonempty{};
 }
@@ -69,12 +80,6 @@ std::string doc_default(const T& x, const std::string& doc) {
     oss << doc << " (=" << x << ")";
     return oss.str();
 }
-
-template <class T>
-struct is_vector : std::false_type {};
-
-template <class T>
-struct is_vector<std::vector<T>> : std::true_type {};
 
 template <class T, enable_if_t<!is_vector<T>{}> = nullptr> inline
 std::function<void(const char*)> set(nlohmann::json& target) {
