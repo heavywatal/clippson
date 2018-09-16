@@ -26,14 +26,19 @@ template <class T>
 struct is_vector<std::vector<T>> : std::true_type {};
 
 template <class T> inline
-std::ostream& operator<<(std::ostream& ost, const std::vector<T>& v) {
-    if (v.empty()) return ost << "[]";
+std::ostream& join(const T& v, std::ostream& ost, const std::string& delimiter) {
+    if (v.empty()) return ost;
     auto it = v.begin();
-    ost << "[" << *it;
+    ost << *it;
     for (++it; it != v.end(); ++it) {
-        ost << "," << *it;
+        ost << delimiter << *it;
     }
-    return ost << "]";
+    return ost;
+}
+
+template <class T> inline
+std::ostream& operator<<(std::ostream& ost, const std::vector<T>& v) {
+    return join(v, ost << "[", ",") << "]";
 }
 
 inline std::string to_string(const nlohmann::json& x) {
