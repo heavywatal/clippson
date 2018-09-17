@@ -15,14 +15,14 @@ struct Parameters {
 
     clipp::group cli(nlohmann::json& vm) {
         return clipp::with_prefixes_short_long("-", "--",
-          wtl::option(vm, {"b", "bool"}, &BOOL),
-          wtl::option(vm, {"i", "int"}, &INT),
-          wtl::option(vm, {"l", "long"}, &LONG),
-          wtl::option(vm, {"u", "unsigned"}, &UNSIGNED),
-          wtl::option(vm, {"s", "size_t"}, &SIZE_T),
-          wtl::option(vm, {"d", "double"}, &DOUBLE),
-          wtl::option(vm, {"c", "string"}, &STRING),
-          wtl::option(vm, {"v", "vector"}, &VECTOR)
+          wtl::option(&vm, {"b", "bool"}, &BOOL),
+          wtl::option(&vm, {"i", "int"}, &INT),
+          wtl::option(&vm, {"l", "long"}, &LONG),
+          wtl::option(&vm, {"u", "unsigned"}, &UNSIGNED),
+          wtl::option(&vm, {"s", "size_t"}, &SIZE_T),
+          wtl::option(&vm, {"d", "double"}, &DOUBLE),
+          wtl::option(&vm, {"c", "string"}, &STRING),
+          wtl::option(&vm, {"v", "vector"}, &VECTOR)
         ).doc("Notified to both json and targets:");
     }
 };
@@ -37,9 +37,9 @@ int main(int argc, char* argv[]) {
 
     nlohmann::json vm;
     auto to_json = (
-      wtl::option(vm, {"--version"}, false, "Print version"),
-      wtl::option(vm, {"--whoami"}, "24601"),
-      wtl::option(vm, {"--year", "-y"}, 2112)
+      wtl::option(&vm, {"--version"}, false, "Print version"),
+      wtl::option(&vm, {"--whoami"}, "24601"),
+      wtl::option(&vm, {"--year", "-y"}, 2112)
     ).doc("Notified to json:");
 
     Parameters params;

@@ -219,9 +219,9 @@ option(std::vector<std::string>&& flags, bool* target, const std::string& doc=" 
 
 template <class T, detail::enable_if_t<!std::is_same<T, bool>{}> = nullptr>
 inline clipp::group
-option(nlohmann::json& obj, std::vector<std::string>&& flags, const T init, const std::string& doc="", const std::string& label="") {
+option(nlohmann::json* obj, std::vector<std::string>&& flags, const T init, const std::string& doc="", const std::string& label="") {
     const auto key = detail::longest(flags);
-    auto& target_js = obj[key] = init;
+    auto& target_js = (*obj)[key] = init;
     return clipp::one_of(
       group<T>("--" + key + "=", label, target_js),
       group<T>(std::move(flags), label, target_js)
@@ -231,9 +231,9 @@ option(nlohmann::json& obj, std::vector<std::string>&& flags, const T init, cons
 
 template <class T, detail::enable_if_t<!std::is_same<T, bool>{} && !std::is_same<T, const char>{}> = nullptr>
 inline clipp::group
-option(nlohmann::json& obj, std::vector<std::string>&& flags, T* target, const std::string& doc="", const std::string& label="") {
+option(nlohmann::json* obj, std::vector<std::string>&& flags, T* target, const std::string& doc="", const std::string& label="") {
     const auto key = detail::longest(flags);
-    auto& target_js = obj[key] = *target;
+    auto& target_js = (*obj)[key] = *target;
     return clipp::one_of(
       group<T>("--" + key + "=", label, target_js, *target),
       group<T>(std::move(flags), label, target_js, *target)
@@ -242,16 +242,16 @@ option(nlohmann::json& obj, std::vector<std::string>&& flags, T* target, const s
 }
 
 inline clipp::parameter
-option(nlohmann::json& obj, std::vector<std::string>&& flags, const bool init=false, const std::string& doc=" ") {
+option(nlohmann::json* obj, std::vector<std::string>&& flags, const bool init=false, const std::string& doc=" ") {
     const auto key = detail::longest(flags);
-    auto& target_js = obj[key] = init;
+    auto& target_js = (*obj)[key] = init;
     return clipp::option(std::move(flags)).call(detail::set<bool>(target_js)).doc(doc);
 }
 
 inline clipp::parameter
-option(nlohmann::json& obj, std::vector<std::string>&& flags, bool* target, const std::string& doc=" ") {
+option(nlohmann::json* obj, std::vector<std::string>&& flags, bool* target, const std::string& doc=" ") {
     const auto key = detail::longest(flags);
-    auto& target_js = obj[key] = *target;
+    auto& target_js = (*obj)[key] = *target;
     return clipp::option(std::move(flags)).call(detail::set<bool>(target_js)).set(*target).doc(doc);
 }
 
