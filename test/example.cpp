@@ -14,7 +14,7 @@ struct Parameters {
     std::vector<int> VECTOR = {0, 1};
 
     clipp::group cli(nlohmann::json& vm) {
-        return clipp::with_prefixes_short_long("-", "--",
+        return (
           wtl::option(&vm, {"b", "bool"}, &BOOL),
           wtl::option(&vm, {"i", "int"}, &INT),
           wtl::option(&vm, {"l", "long"}, &LONG),
@@ -30,16 +30,16 @@ struct Parameters {
 int main(int argc, char* argv[]) {
     bool help = false;
     int answer = 42;
-    auto to_targets = clipp::with_prefixes_short_long("-", "--",
+    auto to_targets = (
       wtl::option({"h", "help"}, &help, "Print help"),
       wtl::option({"a", "answer"}, &answer, "Answer")
     ).doc("Notified to targets:");
 
     nlohmann::json vm;
     auto to_json = (
-      wtl::option(&vm, {"--version"}, false, "Print version"),
-      wtl::option(&vm, {"--whoami"}, "24601"),
-      wtl::option(&vm, {"--year", "-y"}, 2112)
+      wtl::option(&vm, {"version"}, false, "Print version"),
+      wtl::option(&vm, {"whoami"}, "24601"),
+      wtl::option(&vm, {"year", "y"}, 2112)
     ).doc("Notified to json:");
 
     Parameters params;
