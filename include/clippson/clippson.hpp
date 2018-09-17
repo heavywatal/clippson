@@ -146,6 +146,13 @@ std::function<void(const char*)> set(X& target) {
     };
 }
 
+template <class T, class X> inline
+std::function<void(const char*)> append_positional(X& target) {
+    return [&target](const char* s){
+        target["--"].push_back(sto<T>(s));
+    };
+}
+
 template <class T, class X, enable_if_t<std::is_arithmetic<T>{}> = nullptr> inline
 std::function<void(void)> clear(X&) {
     return [](){};
@@ -168,6 +175,13 @@ value(const std::string& label) {
 template <class T, class Target, class... Rest> inline clipp::parameter
 value(const std::string& label, Target& target, Rest&... rest) {
     return value<T>(label, rest...).call(detail::set<T>(target));
+}
+
+template <class T>
+inline clipp::parameter
+value(nlohmann::json* obj, const std::string& label, const std::string& doc="") {
+    return clipp::value(detail::filter_type<T>(), label)
+             .call(detail::append_positional<T>(*obj)).doc(doc);
 }
 
 template <class T, class F> inline clipp::parameter
@@ -280,7 +294,9 @@ inline clipp::arg_list arg_list(const nlohmann::json& obj) {
             args.push_back("--" + it.key());
         } else if (it->is_array()) {
             if (it.value().empty()) continue;
-            args.push_back("--" + it.key());
+            if (it.key() != "--") {
+                args.push_back("--" + it.key());
+            }
             for (const auto& x: it.value()) {
                 args.push_back(detail::to_string(x));
             }

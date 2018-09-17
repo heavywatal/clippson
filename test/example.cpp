@@ -45,7 +45,13 @@ int main(int argc, char* argv[]) {
     Parameters params;
     auto to_json_and_targets = params.cli(vm);
 
+    auto positional = (
+      wtl::value<int>(&vm, "nsam", "Number of samples"),
+      wtl::value<std::string>(&vm, "label", "L")
+    ).doc("Positional (required):");
+
     auto cli = clipp::joinable(
+      // positional,
       to_targets,
       to_json,
       to_json_and_targets
@@ -67,6 +73,7 @@ int main(int argc, char* argv[]) {
     std::cout << argv[0];
     for (const auto& x: args) {std::cout << " {" << x << "}";}
     std::cout << "\n";
+    if (vm.find("--") != vm.end()) vm["--"].clear();
     wtl::parse(cli, args);
     std::cout << "Round trip: " << vm.dump(2) << "\n";
     std::cout << "Answer: " << answer << "\n";
