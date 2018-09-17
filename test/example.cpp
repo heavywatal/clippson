@@ -47,7 +47,7 @@ int main(int argc, char* argv[]) {
 
     auto positional = (
       wtl::value<int>(&vm, "nsam", "Number of samples"),
-      wtl::value<std::string>(&vm, "label", "L")
+      wtl::value<std::string>(&vm, "howmany", "tears")
     ).doc("Positional (required):");
 
     auto cli = clipp::joinable(
