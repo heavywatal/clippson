@@ -314,9 +314,13 @@ inline clipp::arg_list arg_list(const nlohmann::json& obj) {
             args.push_back("--" + it.key());
         } else if (it->is_array()) {
             if (it.value().empty()) continue;
-            if (it.key() != "--") {
-                args.push_back("--" + it.key());
+            if (it.key() == "--") {
+                for (const auto& x: it.value()) {
+                    args.push_back(detail::to_string(x));
+                }
+                continue;
             }
+            args.push_back("--" + it.key());
             args.push_back(detail::to_string(it.value()));
         } else {
             args.push_back("--" + it.key());
