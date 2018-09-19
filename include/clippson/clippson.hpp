@@ -45,6 +45,8 @@ inline std::string to_string(const nlohmann::json& x) {
     std::ostringstream oss;
     if (x.is_string()) {
         oss << x.get<std::string>();
+    } else if (x.is_array()) {
+        join(x, oss, ",");
     } else {
         oss << x;
     }
@@ -93,8 +95,8 @@ inline clipp::match::numbers filter_type() {
 }
 
 template <class T, enable_if_t<is_vector<T>{}> = nullptr>
-inline auto filter_type() -> decltype(filter_type<typename T::value_type>()) {
-    return filter_type<typename T::value_type>();
+inline any filter_type() {
+    return any{};
 }
 
 template <class T, enable_if_t<!std::is_arithmetic<T>{} && !is_vector<T>{}> = nullptr>
@@ -132,6 +134,15 @@ sto<unsigned long long>(const std::string& s) {return std::stoull(s);}
 template <> inline double
 sto<double>(const std::string& s) {return std::stod(s);}
 
+template <class T, class X> inline void
+split(const std::string& src, X* dst, const std::string& delimiter=",") {
+    if (src.empty()) return;
+    for (size_t start = 0, pos = 0; pos != src.npos; start = pos + 1u) {
+        pos = src.find_first_of(delimiter, start);
+        dst->push_back(sto<T>(src.substr(start, pos - start)));
+    }
+}
+
 template <class T, class X, enable_if_t<!is_vector<T>{}> = nullptr> inline
 std::function<void(const char*)> set(X& target) {
     return [&target](const char* s){
@@ -142,7 +153,8 @@ std::function<void(const char*)> set(X& target) {
 template <class T, class X, enable_if_t<is_vector<T>{}> = nullptr> inline
 std::function<void(const char*)> set(X& target) {
     return [&target](const char* s){
-        target.push_back(sto<typename T::value_type>(s));
+        target.clear();
+        split<typename T::value_type>(s, &target);
     };
 }
 
@@ -168,8 +180,7 @@ std::function<void(void)> clear(X& target) {
 template <class T> inline clipp::parameter
 value(const std::string& label) {
     return clipp::value(detail::filter_type<T>(), label)
-      .required(std::is_arithmetic<T>{})
-      .repeatable(detail::is_vector<T>{});
+      .required(std::is_arithmetic<T>{});
 }
 
 template <class T, class Target, class... Rest> inline clipp::parameter
@@ -299,9 +310,7 @@ inline clipp::arg_list arg_list(const nlohmann::json& obj) {
             if (it.key() != "--") {
                 args.push_back("--" + it.key());
             }
-            for (const auto& x: it.value()) {
-                args.push_back(detail::to_string(x));
-            }
+            args.push_back(detail::to_string(it.value()));
         } else {
             args.push_back("--" + it.key());
             args.push_back(detail::to_string(it.value()));
