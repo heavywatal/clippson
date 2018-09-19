@@ -76,34 +76,6 @@ std::string doc_default(const T& x, const std::string& doc) {
     return oss.str();
 }
 
-struct any {
-    bool operator()(const std::string&) const noexcept {return true;}
-};
-
-struct nonempty {
-    bool operator()(const std::string& s) const noexcept {return !s.empty();}
-};
-
-template <class T, enable_if_t<std::is_integral<T>{}> = nullptr>
-inline clipp::match::integers filter_type() {
-    return clipp::match::integers{};
-}
-
-template <class T, enable_if_t<std::is_floating_point<T>{}> = nullptr>
-inline clipp::match::numbers filter_type() {
-    return clipp::match::numbers{};
-}
-
-template <class T, enable_if_t<is_vector<T>{}> = nullptr>
-inline any filter_type() {
-    return any{};
-}
-
-template <class T, enable_if_t<!std::is_arithmetic<T>{} && !is_vector<T>{}> = nullptr>
-inline nonempty filter_type() {
-    return nonempty{};
-}
-
 template <class T> inline T
 sto(const std::string& s) {return s;}
 
@@ -143,6 +115,41 @@ split(const std::string& src, X* dst, const std::string& delimiter=",") {
     }
 }
 
+template <class T>
+struct try_conversion {
+    bool operator()(const std::string& s) const noexcept {
+        try {
+            sto<T>(s);
+        } catch (...) {
+            return false;
+        }
+        return true;
+    }
+};
+
+template <class T>
+struct try_split {
+    bool operator()(const std::string& s) const noexcept {
+        T v;
+        try {
+            split<typename T::value_type>(s, &v, ",");
+        } catch (...) {
+            return false;
+        }
+        return true;
+    }
+};
+
+template <class T, enable_if_t<!is_vector<T>{}> = nullptr>
+inline try_conversion<T> filter() {
+    return try_conversion<T>{};
+}
+
+template <class T, enable_if_t<is_vector<T>{}> = nullptr>
+inline try_split<T> filter() {
+    return try_split<T>{};
+}
+
 template <class T, class X, enable_if_t<!is_vector<T>{}> = nullptr> inline
 std::function<void(const char*)> set(X& target) {
     return [&target](const char* s){
@@ -179,8 +186,8 @@ std::function<void(void)> clear(X& target) {
 
 template <class T> inline clipp::parameter
 value(const std::string& label) {
-    return clipp::value(detail::filter_type<T>(), label)
-      .required(std::is_arithmetic<T>{});
+    return clipp::value(detail::filter<T>(), label)
+             .required(std::is_arithmetic<T>{});
 }
 
 template <class T, class Target, class... Rest> inline clipp::parameter
@@ -191,7 +198,7 @@ value(const std::string& label, Target& target, Rest&... rest) {
 template <class T>
 inline clipp::parameter
 value(nlohmann::json* obj, const std::string& label, const std::string& doc="") {
-    return clipp::value(detail::filter_type<T>(), label)
+    return clipp::value(detail::filter<T>(), label)
              .call(detail::append_positional<T>(*obj)).doc(doc);
 }
 
