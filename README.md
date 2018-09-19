@@ -6,8 +6,9 @@ This is a helper library of [muellan/clipp](https://github.com/muellan/clipp), t
 
 - Support using [nlohmann/json](https://github.com/nlohmann/json) as a `boost::program_options::variables_map`-like object, which makes it possible to print all the variables at once to console/files in a computer-readable format.
 - Create a pair of `clipp::option` and `clipp::value` (as a `clipp::group`) with a doc string including its default value.
-- Set `repeatable(true)` automatically when the given target is a vector.
-- Apply `clipp::match::integer`, `clipp::match::number`, or `clipp::match::nonempty` filter to each `clipp::value` automatically based on the type of its target variable.
+- Use `std::sto***()` to validate arguments and convert strings.
+  A proper function is chosen for each `clipp::value` based on the type of its target variable.
+- Support comma separated values for vector targets, e.g., `-v 1,2,3`.
 - Accept `=` as an optional separator of a flag and its value, e.g., `--longopt=value` is treated almost equally as `--longopt value`.
 
 
