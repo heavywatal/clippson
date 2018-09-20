@@ -225,7 +225,7 @@ template <class T, detail::enable_if_t<!std::is_same<T, bool>{}> = nullptr>
 inline clipp::group
 option(std::vector<std::string>&& flags, T* target, const std::string& doc="", const std::string& label="") {
     const auto key = detail::longest(flags);
-    return clipp::one_of(
+    return (
       group<T>(key + "=", label, *target),
       group<T>(std::move(flags), label, *target)
         % detail::doc_default(*target, doc)
@@ -242,7 +242,7 @@ inline clipp::group
 option(nlohmann::json* obj, std::vector<std::string>&& flags, const T init, const std::string& doc="", const std::string& label="") {
     const auto key = detail::longest(flags);
     auto& target_js = (*obj)[key] = init;
-    return clipp::one_of(
+    return (
       group<T>(key + "=", label, target_js),
       group<T>(std::move(flags), label, target_js)
         % detail::doc_default(init, doc)
@@ -254,7 +254,7 @@ inline clipp::group
 option(nlohmann::json* obj, std::vector<std::string>&& flags, T* target, const std::string& doc="", const std::string& label="") {
     const auto key = detail::longest(flags);
     auto& target_js = (*obj)[key] = *target;
-    return clipp::one_of(
+    return (
       group<T>(key + "=", label, target_js, *target),
       group<T>(std::move(flags), label, target_js, *target)
         % detail::doc_default(*target, doc)
