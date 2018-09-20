@@ -10,6 +10,7 @@ This is a helper library of [muellan/clipp](https://github.com/muellan/clipp), t
   A proper function is chosen for each `clipp::value` based on the type of its target variable.
 - Support comma separated values for vector targets, e.g., `-v 1,2,3`.
 - Accept `=` as an optional separator of a flag and its value, e.g., `--longopt=value` is treated almost equally as `--longopt value`.
+- Support `CMake` building system.
 
 
 ## Installation
@@ -33,8 +34,6 @@ make -j2 install
 ```
 
 `clippson.hpp` and the required headers, `clipp.h` and `json.hpp`, are installed to `${CMAKE_INSTALL_PREFIX}/include/clippson/`.
-This library can be used with `find_package()` from other CMake projects.
-
 
 ## Usage
 
@@ -43,3 +42,9 @@ Functions are defined in the namespace `wtl`.
 The required headers `clipp.h` and `json.hpp` are included therein, hence their functions are available in the original namespaces.
 
 See [test/example.cpp](https://github.com/heavywatal/clippson/blob/master/test/example.cpp) for more details.
+
+This library can be imported as a CMake package:
+```cmake
+find_package(clippson REQUIRED)
+target_link_libraries(your_project PRIVATE clippson::clippson)
+```
