@@ -13,16 +13,16 @@ struct Parameters {
     std::string STRING = "Hello, world!";
     std::vector<int> VECTOR = {0, 1};
 
-    clipp::group cli(nlohmann::json& vm) {
+    clipp::group cli(nlohmann::json* vm) {
         return (
-          wtl::option(&vm, {"b", "bool"}, &BOOL),
-          wtl::option(&vm, {"i", "int"}, &INT),
-          wtl::option(&vm, {"l", "long"}, &LONG),
-          wtl::option(&vm, {"u", "unsigned"}, &UNSIGNED),
-          wtl::option(&vm, {"s", "size_t"}, &SIZE_T),
-          wtl::option(&vm, {"d", "double"}, &DOUBLE),
-          wtl::option(&vm, {"c", "string"}, &STRING),
-          wtl::option(&vm, {"v", "vector"}, &VECTOR)
+          wtl::option(vm, {"b", "bool"}, &BOOL),
+          wtl::option(vm, {"i", "int"}, &INT),
+          wtl::option(vm, {"l", "long"}, &LONG),
+          wtl::option(vm, {"u", "unsigned"}, &UNSIGNED),
+          wtl::option(vm, {"s", "size_t"}, &SIZE_T),
+          wtl::option(vm, {"d", "double"}, &DOUBLE),
+          wtl::option(vm, {"c", "string"}, &STRING),
+          wtl::option(vm, {"v", "vector"}, &VECTOR)
         ).doc("Notified to both json and targets:");
     }
 };
@@ -43,7 +43,7 @@ int main(int argc, char* argv[]) {
     ).doc("Notified to json:");
 
     Parameters params;
-    auto to_json_and_targets = params.cli(vm);
+    auto to_json_and_targets = params.cli(&vm);
 
     auto positional = (
       wtl::value<int>(&vm, "nsam", "Number of samples"),
@@ -77,4 +77,5 @@ int main(int argc, char* argv[]) {
     wtl::parse(cli, args);
     std::cout << "Round trip: " << vm.dump(2) << "\n";
     std::cout << "Answer: " << answer << "\n";
+    return 0;
 }
