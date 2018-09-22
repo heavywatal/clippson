@@ -195,14 +195,35 @@ value(const std::string& label, Target& target, Rest&... rest) {
     return value<T>(label, rest...).call(detail::set<T>(target));
 }
 
-template <class T>
-inline clipp::parameter
+template <class T> inline clipp::parameter
 value(nlohmann::json* obj, const std::string& label, const std::string& doc="") {
     return clipp::value(detail::filter<T>(), label)
              .call(detail::append_positional<T>(*obj)).doc(doc);
 }
 
-template <class T, class F> inline clipp::parameter
+template <class T> inline clipp::parameter
+command(const T& x) {
+    std::ostringstream oss;
+    oss << x;
+    return clipp::command(oss.str());
+}
+
+template <class T, class Target, class... Rest> inline clipp::parameter
+command(const T& x, Target& target, Rest&... rest) {
+    return command(x, rest...).call(detail::set<T>(target));
+}
+
+template <class T, class... Targets> inline clipp::group
+one_of(T&& choices, Targets*... targets) {
+    clipp::group g;
+    for (auto& x: choices) {
+        g.push_back(command(x, *targets...));
+    }
+    g.exclusive(true);
+    return g;
+}
+
+template <class T = std::nullptr_t, class F> inline clipp::parameter
 option(F&& flags) {
     return clipp::with_prefixes_short_long("-", "--",
         clipp::option(std::forward<F>(flags))
@@ -257,6 +278,47 @@ option(nlohmann::json* obj, std::vector<std::string>&& flags, T* target, const s
     return (
       group<T>(key + "=", label, target_js, *target),
       group<T>(std::move(flags), label, target_js, *target)
+        % detail::doc_default(*target, doc)
+    );
+}
+
+template <class T, detail::enable_if_t<!std::is_same<T, bool>{}> = nullptr>
+inline clipp::group
+option(std::vector<std::string>&& flags,
+       std::vector<T> choices, T* target, const std::string& doc="") {
+    const auto key = detail::longest(flags);
+    auto commands = one_of(std::move(choices), target);
+    return (
+      (option(key + "=") & commands),
+      (option(std::move(flags)) & commands)
+        % detail::doc_default(*target, doc)
+    );
+}
+
+template <class T, detail::enable_if_t<!std::is_same<T, bool>{}> = nullptr>
+inline clipp::group
+option(nlohmann::json* obj, std::vector<std::string>&& flags,
+       std::vector<T> choices, const T init, const std::string& doc="") {
+    const auto key = detail::longest(flags);
+    auto& target_js = (*obj)[key] = init;
+    auto commands = one_of(std::move(choices), &target_js);
+    return (
+      (option(key + "=") & commands),
+      (option(std::move(flags)) & commands)
+        % detail::doc_default(init, doc)
+    );
+}
+
+template <class T, detail::enable_if_t<!std::is_same<T, bool>{} && !std::is_same<T, const char>{}> = nullptr>
+inline clipp::group
+option(nlohmann::json* obj, std::vector<std::string>&& flags,
+       std::vector<T> choices, T* target, const std::string& doc="") {
+    const auto key = detail::longest(flags);
+    auto& target_js = (*obj)[key] = *target;
+    auto commands = one_of(std::move(choices), &target_js, target);
+    return (
+      (option(key + "=") & commands),
+      (option(std::move(flags)) & commands)
         % detail::doc_default(*target, doc)
     );
 }
