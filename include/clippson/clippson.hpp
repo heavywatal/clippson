@@ -214,7 +214,7 @@ command(const T& x, Target& target, Rest&... rest) {
 }
 
 template <class T, class... Targets> inline clipp::group
-one_of(T&& choices, Targets*... targets) {
+commands(T&& choices, Targets*... targets) {
     clipp::group g;
     for (auto& x: choices) {
         g.push_back(command(x, *targets...));
@@ -253,11 +253,6 @@ option(std::vector<std::string>&& flags, T* target, const std::string& doc="", c
    );
 }
 
-inline clipp::parameter
-option(std::vector<std::string>&& flags, bool* target, const std::string& doc=" ") {
-    return option<bool>(std::move(flags)).set(*target).doc(doc);
-}
-
 template <class T, detail::enable_if_t<!std::is_same<T, bool>{}> = nullptr>
 inline clipp::group
 option(nlohmann::json* obj, std::vector<std::string>&& flags, const T init, const std::string& doc="", const std::string& label="") {
@@ -287,10 +282,10 @@ inline clipp::group
 option(std::vector<std::string>&& flags,
        std::vector<T> choices, T* target, const std::string& doc="") {
     const auto key = detail::longest(flags);
-    auto commands = one_of(std::move(choices), target);
+    auto cmds = commands(std::move(choices), target);
     return (
-      (option(key + "=") & commands),
-      (option(std::move(flags)) & commands)
+      (option(key + "=") & cmds),
+      (option(std::move(flags)) & cmds)
         % detail::doc_default(*target, doc)
     );
 }
@@ -301,10 +296,10 @@ option(nlohmann::json* obj, std::vector<std::string>&& flags,
        std::vector<T> choices, const T init, const std::string& doc="") {
     const auto key = detail::longest(flags);
     auto& target_js = (*obj)[key] = init;
-    auto commands = one_of(std::move(choices), &target_js);
+    auto cmds = commands(std::move(choices), &target_js);
     return (
-      (option(key + "=") & commands),
-      (option(std::move(flags)) & commands)
+      (option(key + "=") & cmds),
+      (option(std::move(flags)) & cmds)
         % detail::doc_default(init, doc)
     );
 }
@@ -315,12 +310,17 @@ option(nlohmann::json* obj, std::vector<std::string>&& flags,
        std::vector<T> choices, T* target, const std::string& doc="") {
     const auto key = detail::longest(flags);
     auto& target_js = (*obj)[key] = *target;
-    auto commands = one_of(std::move(choices), &target_js, target);
+    auto cmds = commands(std::move(choices), &target_js, target);
     return (
-      (option(key + "=") & commands),
-      (option(std::move(flags)) & commands)
+      (option(key + "=") & cmds),
+      (option(std::move(flags)) & cmds)
         % detail::doc_default(*target, doc)
     );
+}
+
+inline clipp::parameter
+option(std::vector<std::string>&& flags, bool* target, const std::string& doc=" ") {
+    return option<bool>(std::move(flags)).set(*target).doc(doc);
 }
 
 inline clipp::parameter
