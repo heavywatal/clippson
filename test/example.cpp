@@ -64,7 +64,7 @@ int main(int argc, char* argv[]) {
         return 0;
     }
     if (vm["version"]) {
-        std::cout << "clipp 1.2.0\n";
+        std::cout << "clipp 1.2.1\n";
         return 0;
     }
     std::cout << "Default values: " << default_values << "\n";
