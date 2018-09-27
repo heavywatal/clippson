@@ -6,11 +6,8 @@ project(clippson
 include(GNUInstallDirs)
 set(CMAKE_VERBOSE_MAKEFILE TRUE)
 
-set(CMAKE_CXX_STANDARD 11)
-set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
-set(CMAKE_CXX_EXTENSIONS FALSE)
-
 add_library(${PROJECT_NAME} INTERFACE)
+add_library(${PROJECT_NAME}::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
 target_include_directories(${PROJECT_NAME} INTERFACE
   $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
@@ -25,10 +22,10 @@ foreach(file IN LISTS subrepo_files)
   configure_file(${file} ${CMAKE_SOURCE_DIR}/include/${PROJECT_NAME}/ COPYONLY)
 endforeach()
 
-set(CONFIG_VERSION_FILE ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}-config-version.cmake)
+set(VERSION_CONFIG ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}-config-version.cmake)
 include(CMakePackageConfigHelpers)
 write_basic_package_version_file(
-  ${CONFIG_VERSION_FILE} COMPATIBILITY AnyNewerVersion
+  ${VERSION_CONFIG} COMPATIBILITY AnyNewerVersion
 )
 
 install(DIRECTORY ${CMAKE_SOURCE_DIR}/include/
@@ -41,7 +38,7 @@ install(EXPORT ${PROJECT_NAME}-config
   DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/${PROJECT_NAME}
   NAMESPACE ${PROJECT_NAME}::
 )
-install(FILES ${CONFIG_VERSION_FILE}
+install(FILES ${VERSION_CONFIG}
   DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/${PROJECT_NAME}
 )
 
