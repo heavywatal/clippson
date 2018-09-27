@@ -9,7 +9,7 @@ set(CMAKE_VERBOSE_MAKEFILE TRUE)
 add_library(${PROJECT_NAME} INTERFACE)
 add_library(${PROJECT_NAME}::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
 target_include_directories(${PROJECT_NAME} INTERFACE
-  $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
+  $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 )
 
@@ -19,7 +19,7 @@ set(subrepo_files
   json/src/json_fwd.hpp
 )
 foreach(file IN LISTS subrepo_files)
-  configure_file(${file} ${CMAKE_SOURCE_DIR}/include/${PROJECT_NAME}/ COPYONLY)
+  configure_file(${file} ${PROJECT_SOURCE_DIR}/include/${PROJECT_NAME}/ COPYONLY)
 endforeach()
 
 set(VERSION_CONFIG ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}-config-version.cmake)
@@ -28,7 +28,7 @@ write_basic_package_version_file(
   ${VERSION_CONFIG} COMPATIBILITY AnyNewerVersion
 )
 
-install(DIRECTORY ${CMAKE_SOURCE_DIR}/include/
+install(DIRECTORY ${PROJECT_SOURCE_DIR}/include/
   DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 )
 install(TARGETS ${PROJECT_NAME}
