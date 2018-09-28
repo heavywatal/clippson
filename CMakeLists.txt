@@ -43,6 +43,6 @@ install(FILES ${VERSION_CONFIG}
 )
 
 include(CTest)
-if(BUILD_TESTING)
+if(BUILD_TESTING AND "${CMAKE_SOURCE_DIR}" STREQUAL "${PROJECT_SOURCE_DIR}")
   add_subdirectory(test)
 endif()
