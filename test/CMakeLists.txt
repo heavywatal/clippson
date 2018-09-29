@@ -1,13 +1,13 @@
+link_libraries(${PROJECT_NAME}::${PROJECT_NAME})
+
 message(STATUS "CMAKE_CXX_COMPILER_ID: ${CMAKE_CXX_COMPILER_ID}")
 if("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
   add_compile_options(-stdlib=libc++)
 endif()
 add_compile_options(-Wall -Wextra -Wpedantic)
 set(CMAKE_CXX_STANDARD 11)
-set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
-set(CMAKE_CXX_EXTENSIONS FALSE)
-
-link_libraries(${PROJECT_NAME}::${PROJECT_NAME})
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
 set(source_files
   example.cpp
