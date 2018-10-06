@@ -6,6 +6,7 @@ matrix:
   - os: osx
     osx_image: xcode8.3
   - os: linux
+  - os: linux
     addons:
       apt:
         sources:
