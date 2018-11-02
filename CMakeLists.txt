@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.1)
 project(clippson
-  VERSION 0.7.5
+  VERSION 0.7.6
   LANGUAGES CXX)
 
 include(GNUInstallDirs)
