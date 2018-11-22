@@ -36,11 +36,6 @@ std::ostream& join(const T& v, std::ostream& ost, const std::string& delimiter) 
     return ost;
 }
 
-template <class T> inline
-std::ostream& operator<<(std::ostream& ost, const std::vector<T>& v) {
-    return join(v, ost << "[", ",") << "]";
-}
-
 inline std::string to_string(const nlohmann::json& x) {
     std::ostringstream oss;
     if (x.is_string()) {
@@ -69,10 +64,17 @@ inline std::string longest(const std::vector<std::string>& args) {
     return lstrip(*it);
 }
 
-template <class T> inline
+template <class T, enable_if_t<!is_vector<T>{}> = nullptr> inline
 std::string doc_default(const T& x, const std::string& doc) {
     std::ostringstream oss;
     oss << doc << " (=" << x << ")";
+    return oss.str();
+}
+
+template <class T, enable_if_t<is_vector<T>{}> = nullptr> inline
+std::string doc_default(const T& x, const std::string& doc) {
+    std::ostringstream oss;
+    join(x, oss << doc << " (=[", ",") << "])";
     return oss.str();
 }
 
