@@ -198,9 +198,14 @@ value(const std::string& label, Target& target, Rest&... rest) {
 }
 
 template <class T> inline clipp::parameter
-value(nlohmann::json* obj, const std::string& label, const std::string& doc="") {
+value(nlohmann::json* obj, const std::string& label) {
     return clipp::value(detail::filter<T>(), label)
-             .call(detail::append_positional<T>(*obj)).doc(doc);
+             .call(detail::append_positional<T>(*obj));
+}
+
+template <class T, class Target, class... Rest> inline clipp::parameter
+value(nlohmann::json* obj, const std::string& label, Target* target, Rest*... rest) {
+    return value<T>(obj, label, rest...).call(detail::set<T>(*target));
 }
 
 template <class T> inline clipp::parameter

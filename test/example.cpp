@@ -45,9 +45,10 @@ int main(int argc, char* argv[]) {
     Parameters params;
     auto to_json_and_targets = params.cli(&vm);
 
+    int nsam = 0;
     auto positional = (
-      wtl::value<int>(&vm, "nsam", "Number of samples"),
-      wtl::value<std::string>(&vm, "howmany", "tears")
+      wtl::value<int>(&vm, "nsam", &nsam).doc("Number of samples"),
+      wtl::value<std::string>(&vm, "howmany") % "tears"
     ).doc("Positional (required):");
 
     auto cli = clipp::joinable(
