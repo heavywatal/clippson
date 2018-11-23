@@ -153,35 +153,35 @@ inline try_split<T> filter() {
 }
 
 template <class T, class X, enable_if_t<!is_vector<T>{}> = nullptr> inline
-std::function<void(const char*)> set(X& target) {
-    return [&target](const char* s){
-        target = sto<T>(s);
+std::function<void(const char*)> set(X* target) {
+    return [target](const char* s){
+        *target = sto<T>(s);
     };
 }
 
 template <class T, class X, enable_if_t<is_vector<T>{}> = nullptr> inline
-std::function<void(const char*)> set(X& target) {
-    return [&target](const char* s){
-        target.clear();
-        split<typename T::value_type>(s, &target);
+std::function<void(const char*)> set(X* target) {
+    return [target](const char* s){
+        target->clear();
+        split<typename T::value_type>(s, target);
     };
 }
 
 template <class T, class X> inline
-std::function<void(const char*)> append_positional(X& target) {
-    return [&target](const char* s){
-        target["--"].push_back(sto<T>(s));
+std::function<void(const char*)> append_positional(X* target) {
+    return [target](const char* s){
+        target->operator[]("--").push_back(sto<T>(s));
     };
 }
 
 template <class T, class X, enable_if_t<std::is_arithmetic<T>{}> = nullptr> inline
-std::function<void(void)> clear(X&) {
+std::function<void(void)> clear(X*) {
     return [](){};
 }
 
 template <class T, class X, enable_if_t<!std::is_arithmetic<T>{}> = nullptr> inline
-std::function<void(void)> clear(X& target) {
-    return [&target](){target.clear();};
+std::function<void(void)> clear(X* target) {
+    return [target](){target->clear();};
 }
 
 } // namespace detail
@@ -193,19 +193,19 @@ value(const std::string& label) {
 }
 
 template <class T, class Target, class... Rest> inline clipp::parameter
-value(const std::string& label, Target& target, Rest&... rest) {
+value(const std::string& label, Target* target, Rest*... rest) {
     return value<T>(label, rest...).call(detail::set<T>(target));
 }
 
 template <class T> inline clipp::parameter
 value(nlohmann::json* obj, const std::string& label) {
     return clipp::value(detail::filter<T>(), label)
-             .call(detail::append_positional<T>(*obj));
+             .call(detail::append_positional<T>(obj));
 }
 
 template <class T, class Target, class... Rest> inline clipp::parameter
 value(nlohmann::json* obj, const std::string& label, Target* target, Rest*... rest) {
-    return value<T>(obj, label, rest...).call(detail::set<T>(*target));
+    return value<T>(obj, label, rest...).call(detail::set<T>(target));
 }
 
 template <class T> inline clipp::parameter
@@ -216,7 +216,7 @@ command(const T& x) {
 }
 
 template <class T, class Target, class... Rest> inline clipp::parameter
-command(const T& x, Target& target, Rest&... rest) {
+command(const T& x, Target* target, Rest*... rest) {
     return command(x, rest...).call(detail::set<T>(target));
 }
 
@@ -224,7 +224,7 @@ template <class T, class... Targets> inline clipp::group
 commands(T&& choices, Targets*... targets) {
     clipp::group g;
     for (auto& x: choices) {
-        g.push_back(command(x, *targets...));
+        g.push_back(command(x, targets...));
     }
     g.exclusive(true);
     return g;
@@ -238,13 +238,13 @@ option(F&& flags) {
 }
 
 template <class T, class F, class Target, class... Rest> inline clipp::parameter
-option(F&& flags, Target& target, Rest&... rest) {
+option(F&& flags, Target* target, Rest*... rest) {
     return option<T>(std::forward<F>(flags), rest...).call(detail::clear<T>(target));
 }
 
 template <class T, class F, detail::enable_if_t<!std::is_same<T, bool>{}> = nullptr, class... Targets>
 inline clipp::group
-group(F&& flags, const std::string& label, Targets&... targets) {
+group(F&& flags, const std::string& label, Targets*... targets) {
     return option<T>(std::forward<F>(flags), targets...)
            & value<T>(label, targets...);
 }
@@ -254,8 +254,8 @@ inline clipp::group
 option(std::vector<std::string>&& flags, T* target, const std::string& doc="", const std::string& label="") {
     const auto key = detail::longest(flags);
     return (
-      group<T>(key + "=", label, *target),
-      group<T>(std::move(flags), label, *target)
+      group<T>(key + "=", label, target),
+      group<T>(std::move(flags), label, target)
         % detail::doc_default(*target, doc)
    );
 }
@@ -266,8 +266,8 @@ option(nlohmann::json* obj, std::vector<std::string>&& flags, const T init, cons
     const auto key = detail::longest(flags);
     auto& target_js = (*obj)[key] = init;
     return (
-      group<T>(key + "=", label, target_js),
-      group<T>(std::move(flags), label, target_js)
+      group<T>(key + "=", label, &target_js),
+      group<T>(std::move(flags), label, &target_js)
         % detail::doc_default(init, doc)
     );
 }
@@ -278,8 +278,8 @@ option(nlohmann::json* obj, std::vector<std::string>&& flags, T* target, const s
     const auto key = detail::longest(flags);
     auto& target_js = (*obj)[key] = *target;
     return (
-      group<T>(key + "=", label, target_js, *target),
-      group<T>(std::move(flags), label, target_js, *target)
+      group<T>(key + "=", label, &target_js, target),
+      group<T>(std::move(flags), label, &target_js, target)
         % detail::doc_default(*target, doc)
     );
 }
@@ -334,14 +334,14 @@ inline clipp::parameter
 option(nlohmann::json* obj, std::vector<std::string>&& flags, const bool init=false, const std::string& doc=" ") {
     const auto key = detail::longest(flags);
     auto& target_js = (*obj)[key] = init;
-    return option<bool>(std::move(flags)).call(detail::set<bool>(target_js)).doc(doc);
+    return option<bool>(std::move(flags)).call(detail::set<bool>(&target_js)).doc(doc);
 }
 
 inline clipp::parameter
 option(nlohmann::json* obj, std::vector<std::string>&& flags, bool* target, const std::string& doc=" ") {
     const auto key = detail::longest(flags);
     auto& target_js = (*obj)[key] = *target;
-    return option<bool>(std::move(flags)).call(detail::set<bool>(target_js)).set(*target).doc(doc);
+    return option<bool>(std::move(flags)).call(detail::set<bool>(&target_js)).set(*target).doc(doc);
 }
 
 inline clipp::doc_formatting doc_format() {
