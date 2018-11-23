@@ -20,3 +20,6 @@ foreach(src IN LISTS source_files)
   add_executable(test-${name_we} ${src})
   add_test(NAME ${name_we} COMMAND $<TARGET_FILE:test-${name_we}>)
 endforeach()
+
+add_executable(test-types_positional types_positional.cpp)
+add_test(NAME types_positional COMMAND test-types_positional 0 0 0 0 0 0.0 x 0,1)

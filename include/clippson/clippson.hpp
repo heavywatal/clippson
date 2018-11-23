@@ -167,10 +167,19 @@ std::function<void(const char*)> set(X* target) {
     };
 }
 
-template <class T, class X> inline
+template <class T, class X, enable_if_t<!is_vector<T>{}> = nullptr> inline
 std::function<void(const char*)> append_positional(X* target) {
     return [target](const char* s){
         target->operator[]("--").push_back(sto<T>(s));
+    };
+}
+
+template <class T, class X, enable_if_t<is_vector<T>{}> = nullptr> inline
+std::function<void(const char*)> append_positional(X* target) {
+    return [target](const char* s){
+        auto v = nlohmann::json::array();
+        split<typename T::value_type>(s, &v);
+        target->operator[]("--").push_back(std::move(v));
     };
 }
 
