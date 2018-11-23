@@ -11,6 +11,9 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 set(source_files
   example.cpp
+  types_target.cpp
+  types_json.cpp
+  types_both.cpp
 )
 foreach(src IN LISTS source_files)
   get_filename_component(name_we ${src} NAME_WE)
