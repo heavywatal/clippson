@@ -23,12 +23,11 @@ int main(int argc, char* argv[]) {
       wtl::option({"d", "double"}, &DOUBLE),
       wtl::option({"c", "string"}, &STRING),
       wtl::option({"v", "vector"}, &VECTOR)
-    ).doc("Notified to both json and targets:");
+    ).doc("Notified to targets:");
     wtl::parse(cli, argc, argv);
     if (help) {
         auto fmt = wtl::doc_format();
         std::cout << clipp::documentation(cli, fmt) << "\n";
-        return 0;
     }
     return 0;
 }

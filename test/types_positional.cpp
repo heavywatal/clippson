@@ -3,6 +3,16 @@
 #include <limits>
 #include <iostream>
 
+bool test_roundtrip(const clipp::group& cli, nlohmann::json& vm) {
+    std::string current_values = vm.dump(2);
+    auto args = wtl::arg_list(vm);
+    for (const auto& x: args) {std::cout << " {" << x << "}";}
+    std::cout << "\n";
+    if (vm.find("--") != vm.end()) vm["--"].clear();
+    wtl::parse(cli, args);
+    return current_values == vm.dump(2);
+}
+
 int main(int argc, char* argv[]) {
     nlohmann::json vm;
     bool help = false;
@@ -26,19 +36,14 @@ int main(int argc, char* argv[]) {
     ).doc("Positional targets");
     std::string default_values = vm.dump(2);
     wtl::parse(cli, argc, argv);
+    std::string current_values = vm.dump(2);
     if (help) {
         auto fmt = wtl::doc_format();
         std::cout << clipp::documentation(cli, fmt) << "\n";
         return 0;
     }
     std::cout << "Default values: " << default_values << "\n";
-    std::cout << "Current values: " << vm.dump(2) << "\n";
-    auto args = wtl::arg_list(vm);
-    std::cout << argv[0];
-    for (const auto& x: args) {std::cout << " {" << x << "}";}
-    std::cout << "\n";
-    if (vm.find("--") != vm.end()) vm["--"].clear();
-    wtl::parse(cli, args);
-    std::cout << "Round trip: " << vm.dump(2) << "\n";
+    std::cout << "Current values: " << current_values << "\n";
+    if (!test_roundtrip(cli, vm)) return 1;
     return 0;
 }

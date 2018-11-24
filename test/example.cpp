@@ -2,20 +2,6 @@
 
 #include <iostream>
 
-struct Parameters {
-    unsigned taxicab = 1729;
-    std::string say = "Hello, world!";
-    std::vector<int> vec = {0, 1};
-
-    clipp::group cli(nlohmann::json* vm) {
-        return (
-          wtl::option(vm, {"u", "unsigned"}, &taxicab),
-          wtl::option(vm, {"c", "string"}, &say),
-          wtl::option(vm, {"v", "vector"}, &vec)
-        ).doc("Notified to both json and targets:");
-    }
-};
-
 int main(int argc, char* argv[]) {
     bool help = false;
     int answer = 42;
@@ -27,16 +13,24 @@ int main(int argc, char* argv[]) {
     nlohmann::json vm;
     auto to_json = (
       wtl::option(&vm, {"version"}, false, "Print version"),
-      wtl::option(&vm, {"whoami"}, {"24601", "Jean", "Javert"}, "24601"),
-      wtl::option(&vm, {"year", "y"}, 2112)
+      wtl::option(&vm, {"ratio"}, 1.618)
     ).doc("Notified to json:");
 
-    Parameters params;
-    auto to_json_and_targets = params.cli(&vm);
+    int taxicab = 1729;
+    std::vector<int> seq = {1, 1, 2};
+    auto to_json_and_targets = (
+      wtl::option(&vm, {"taxicab"}, &taxicab),
+      wtl::option(&vm, {"sequence"}, &seq)
+    ).doc("Notified to both json and targets:");
 
-    int nsam = 0;
+    auto with_choices = (
+      wtl::option(&vm, {"year", "y"}, {1984, 2112}, 1984),
+      wtl::option(&vm, {"whoami"}, {"24601", "Jean", "Javert"}, "24601")
+    ).doc("Options with choices:");
+
+    unsigned nsam = 0;
     auto positional = (
-      wtl::value<int>(&vm, "nsam", &nsam).doc("Number of samples"),
+      wtl::value<unsigned>(&vm, "nsam", &nsam).doc("Number of samples"),
       wtl::value<std::string>(&vm, "howmany") % "tears"
     ).doc("Positional (required):");
 
@@ -44,18 +38,17 @@ int main(int argc, char* argv[]) {
       // positional,
       to_targets,
       to_json,
-      to_json_and_targets
+      to_json_and_targets,
+      with_choices
     );
     std::string default_values = vm.dump(2);
     wtl::parse(cli, argc, argv);
     if (help) {
         auto fmt = wtl::doc_format();
         std::cout << clipp::documentation(cli, fmt) << "\n";
-        return 0;
     }
     if (vm["version"]) {
         std::cout << "clipp 1.2.2\n";
-        return 0;
     }
     std::cout << "Default values: " << default_values << "\n";
     std::cout << "Current values: " << vm.dump(2) << "\n";
