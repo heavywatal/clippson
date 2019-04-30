@@ -5,21 +5,23 @@ if("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
   add_compile_options(-stdlib=libc++)
 endif()
 add_compile_options(-Wall -Wextra -pedantic)
-set(CMAKE_CXX_STANDARD 11)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
 
 set(source_files
   example.cpp
   types_target.cpp
   types_json.cpp
   types_both.cpp
+  types_positional.cpp
 )
 foreach(src IN LISTS source_files)
   get_filename_component(name_we ${src} NAME_WE)
   add_executable(test-${name_we} ${src})
+  set_target_properties(test-${name_we} PROPERTIES
+    CXX_STANDARD 11
+    CXX_STANDARD_REQUIRED ON
+    CXX_EXTENSIONS OFF
+  )
   add_test(NAME ${name_we} COMMAND $<TARGET_FILE:test-${name_we}> -h)
 endforeach()
 
-add_executable(test-types_positional types_positional.cpp)
-add_test(NAME types_positional COMMAND test-types_positional 0 0 0 0 0 0.0 x 0,1)
+add_test(NAME types_positional-pos COMMAND test-types_positional 0 0 0 0 0 0.0 x 0,1)
