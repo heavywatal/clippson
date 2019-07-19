@@ -16,7 +16,7 @@ This is a helper library of [muellan/clipp](https://github.com/muellan/clipp), t
 
 ## Installation
 
-The easiest way is to use [Homebrew](https://brew.sh/)/[Linuxbrew](http://linuxbrew.sh/).
+The easiest way is to use [Homebrew](https://brew.sh/).
 The following command installs tumopp and all the dependencies:
 ```sh
 brew install heavywatal/tap/clippson
