@@ -1,6 +1,6 @@
 # clippson
 
-[![Build Status](https://travis-ci.org/heavywatal/clippson.svg?branch=master)](https://travis-ci.org/heavywatal/clippson)
+[![Build status](https://github.com/heavywatal/clippson/workflows/build/badge.svg)](https://github.com/heavywatal/clippson/actions)
 
 This is a helper library of [muellan/clipp](https://github.com/muellan/clipp), the awesome C++ command-line parser.
 
