@@ -27,11 +27,10 @@ Alternatively, you can get the source code from GitHub manually:
 git clone https://github.com/heavywatal/clippson.git
 cd clippson/
 git submodule update --init --recursive
-mkdir build
-cd build/
 DESTINATION=${HOME}/local
-cmake -DCMAKE_INSTALL_PREFIX=$DESTINATION ..
-make -j2 install
+cmake -S . -B build -DCMAKE_INSTALL_PREFIX=$DESTINATION
+cmake --build build -j2
+cmake --install build
 ```
 
 `clippson.hpp` and the required headers, `clipp.h` and `json.hpp`, are installed to `${CMAKE_INSTALL_PREFIX}/include/clippson/`.
