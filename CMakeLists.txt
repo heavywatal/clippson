@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.15)
 project(clippson
-  VERSION 0.8.5
+  VERSION 0.8.6
   LANGUAGES CXX)
 
 set(CMAKE_VERBOSE_MAKEFILE ON)
