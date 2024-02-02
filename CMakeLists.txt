@@ -3,8 +3,10 @@ project(clippson
   VERSION 0.8.5
   LANGUAGES CXX)
 
-include(GNUInstallDirs)
 set(CMAKE_VERBOSE_MAKEFILE ON)
+include(CMakePrintHelpers)
+include(GNUInstallDirs)
+cmake_print_variables(CMAKE_INSTALL_PREFIX)
 
 set(subrepo_files
   clipp/include/clipp.h
@@ -21,6 +23,7 @@ target_include_directories(${PROJECT_NAME} INTERFACE
   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 )
+target_compile_features(${PROJECT_NAME} INTERFACE cxx_std_17)
 
 install(DIRECTORY ${PROJECT_SOURCE_DIR}/include/
   DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
