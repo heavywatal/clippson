@@ -1,6 +1,0 @@
-[submodule "clipp"]
-	path = clipp
-	url = https://github.com/heavywatal/clipp.git
-[submodule "json"]
-	path = json
-	url = https://github.com/heavywatal/json.git

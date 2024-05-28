@@ -26,7 +26,6 @@ Alternatively, you can get the source code from GitHub manually:
 ```sh
 git clone https://github.com/heavywatal/clippson.git
 cd clippson/
-git submodule update --init --recursive
 DESTINATION=${HOME}/local
 cmake -S . -B build -DCMAKE_INSTALL_PREFIX=$DESTINATION
 cmake --build build -j2
