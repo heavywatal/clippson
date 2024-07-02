@@ -42,25 +42,24 @@ endfunction()
 git_fetch(clipp v1.2.3.1 heavywatal/clipp)
 git_fetch(json v3.11.3 heavywatal/json)
 
-set(subrepo_files
-  ${clipp_SOURCE_DIR}/include/clipp.h
-  ${json_SOURCE_DIR}/src/json.hpp
-  ${json_SOURCE_DIR}/src/json_fwd.hpp
-)
-foreach(file IN LISTS subrepo_files)
-  configure_file(${file} ${PROJECT_SOURCE_DIR}/include/${PROJECT_NAME}/ COPYONLY)
-endforeach()
-
 add_library(${PROJECT_NAME} INTERFACE)
 add_library(${PROJECT_NAME}::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
 target_include_directories(${PROJECT_NAME} INTERFACE
   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
+  $<BUILD_INTERFACE:${clipp_SOURCE_DIR}/include>
+  $<BUILD_INTERFACE:${json_SOURCE_DIR}/src>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 )
 target_compile_features(${PROJECT_NAME} INTERFACE cxx_std_17)
 
 install(DIRECTORY ${PROJECT_SOURCE_DIR}/include/
   DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+)
+install(FILES
+  ${clipp_SOURCE_DIR}/include/clipp.h
+  ${json_SOURCE_DIR}/src/json.hpp
+  ${json_SOURCE_DIR}/src/json_fwd.hpp
+  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}
 )
 install(TARGETS ${PROJECT_NAME}
   EXPORT ${PROJECT_NAME}-config
