@@ -10,6 +10,8 @@
 #include <algorithm>
 #include <vector>
 #include <string>
+#include <string_view>
+#include <charconv>
 #include <sstream>
 
 namespace wtl {
@@ -26,7 +28,7 @@ template <class T>
 struct is_vector<std::vector<T>> : std::true_type {};
 
 template <class T> inline
-std::ostream& join(const T& v, std::ostream& ost, const std::string& delimiter) {
+std::ostream& join(const T& v, std::ostream& ost, std::string_view delimiter) {
     if (v.empty()) return ost;
     auto it = v.begin();
     ost << *it;
@@ -52,64 +54,54 @@ inline std::string lstrip(const std::string& s) {
     return s.substr(s.find_first_not_of('-'));
 }
 
-inline size_t length(const std::string& s) {
+inline size_t length(std::string_view s) {
     return s.size() - s.find_first_not_of('-');
 }
 
 inline std::string longest(const std::vector<std::string>& args) {
     auto it = std::max_element(args.begin(), args.end(),
-                  [](const std::string& lhs, const std::string& rhs) {
+                  [](std::string_view lhs, std::string_view rhs) {
                       return length(lhs) < length(rhs);
                   });
     return lstrip(*it);
 }
 
 template <class T, enable_if_t<!is_vector<T>{}> = nullptr> inline
-std::string doc_default(const T& x, const std::string& doc) {
+std::string doc_default(const T& x, std::string_view doc) {
     std::ostringstream oss;
     oss << doc << " (=" << x << ")";
     return oss.str();
 }
 
 template <class T, enable_if_t<is_vector<T>{}> = nullptr> inline
-std::string doc_default(const T& x, const std::string& doc) {
+std::string doc_default(const T& x, std::string_view doc) {
     std::ostringstream oss;
     join(x, oss << doc << " (=[", ",") << "])";
     return oss.str();
 }
 
 template <class T> inline T
+sto(const std::string& s) {
+  std::string_view sv(s);
+  T x{};
+  std::from_chars(std::begin(sv), std::end(sv), x);
+  return x;
+}
+
+template <> inline std::string
 sto(const std::string& s) {return s;}
 
 template <> inline const char*
 sto(const std::string& s) {return s.c_str();}
 
 template <> inline bool
-sto<bool>(const std::string&) {return true;}
-
-template <> inline int
-sto<int>(const std::string& s) {return std::stoi(s);}
-
-template <> inline long
-sto<long>(const std::string& s) {return std::stol(s);}
-
-template <> inline long long
-sto<long long>(const std::string& s) {return std::stoll(s);}
-
-template <> inline unsigned
-sto<unsigned>(const std::string& s) {return static_cast<unsigned>(std::stoul(s));}
-
-template <> inline unsigned long
-sto<unsigned long>(const std::string& s) {return std::stoul(s);}
-
-template <> inline unsigned long long
-sto<unsigned long long>(const std::string& s) {return std::stoull(s);}
+sto(const std::string&) {return true;}
 
 template <> inline double
-sto<double>(const std::string& s) {return std::stod(s);}
+sto(const std::string& s) {return std::stod(s);}
 
 template <class T, class X> inline void
-split(const std::string& src, X* dst, const std::string& delimiter=",") {
+split(const std::string& src, X* dst, std::string_view delimiter=",") {
     if (src.empty()) return;
     for (size_t start = 0, pos = 0; pos != src.npos; start = pos + 1u) {
         pos = src.find_first_of(delimiter, start);
@@ -260,7 +252,7 @@ group(F&& flags, const std::string& label, Targets*... targets) {
 
 template <class T, detail::enable_if_t<!std::is_same<T, bool>{}> = nullptr>
 inline clipp::group
-option(std::vector<std::string>&& flags, T* target, const std::string& doc="", const std::string& label="") {
+option(std::vector<std::string>&& flags, T* target, std::string_view doc="", const std::string& label="") {
     const auto key = detail::longest(flags);
     return (
       group<T>(key + "=", label, target),
@@ -271,7 +263,7 @@ option(std::vector<std::string>&& flags, T* target, const std::string& doc="", c
 
 template <class T, detail::enable_if_t<!std::is_same<T, bool>{}> = nullptr>
 inline clipp::group
-option(nlohmann::json* obj, std::vector<std::string>&& flags, const T init, const std::string& doc="", const std::string& label="") {
+option(nlohmann::json* obj, std::vector<std::string>&& flags, const T init, std::string_view doc="", const std::string& label="") {
     const auto key = detail::longest(flags);
     auto& target_js = (*obj)[key] = init;
     return (
@@ -283,7 +275,7 @@ option(nlohmann::json* obj, std::vector<std::string>&& flags, const T init, cons
 
 template <class T, detail::enable_if_t<!std::is_same<T, bool>{} && !std::is_same<T, const char>{}> = nullptr>
 inline clipp::group
-option(nlohmann::json* obj, std::vector<std::string>&& flags, T* target, const std::string& doc="", const std::string& label="") {
+option(nlohmann::json* obj, std::vector<std::string>&& flags, T* target, std::string_view doc="", const std::string& label="") {
     const auto key = detail::longest(flags);
     auto& target_js = (*obj)[key] = *target;
     return (
@@ -296,7 +288,7 @@ option(nlohmann::json* obj, std::vector<std::string>&& flags, T* target, const s
 template <class T, detail::enable_if_t<!std::is_same<T, bool>{}> = nullptr>
 inline clipp::group
 option(std::vector<std::string>&& flags,
-       std::vector<T> choices, T* target, const std::string& doc="") {
+       std::vector<T> choices, T* target, std::string_view doc="") {
     const auto key = detail::longest(flags);
     auto cmds = commands(std::move(choices), target);
     return (
@@ -309,7 +301,7 @@ option(std::vector<std::string>&& flags,
 template <class T, detail::enable_if_t<!std::is_same<T, bool>{}> = nullptr>
 inline clipp::group
 option(nlohmann::json* obj, std::vector<std::string>&& flags,
-       std::vector<T> choices, const T init, const std::string& doc="") {
+       std::vector<T> choices, const T init, std::string_view doc="") {
     const auto key = detail::longest(flags);
     auto& target_js = (*obj)[key] = init;
     auto cmds = commands(std::move(choices), &target_js);
@@ -323,7 +315,7 @@ option(nlohmann::json* obj, std::vector<std::string>&& flags,
 template <class T, detail::enable_if_t<!std::is_same<T, bool>{} && !std::is_same<T, const char>{}> = nullptr>
 inline clipp::group
 option(nlohmann::json* obj, std::vector<std::string>&& flags,
-       std::vector<T> choices, T* target, const std::string& doc="") {
+       std::vector<T> choices, T* target, std::string_view doc="") {
     const auto key = detail::longest(flags);
     auto& target_js = (*obj)[key] = *target;
     auto cmds = commands(std::move(choices), &target_js, target);
