@@ -10,7 +10,6 @@
 #include <algorithm>
 #include <vector>
 #include <string>
-#include <string_view>
 #include <charconv>
 #include <sstream>
 
@@ -18,14 +17,14 @@ namespace wtl {
 
 namespace detail {
 
-template <bool Condition>
-using enable_if_t = typename std::enable_if<Condition, std::nullptr_t>::type;
-
 template <class T>
 struct is_vector : std::false_type {};
 
 template <class T>
 struct is_vector<std::vector<T>> : std::true_type {};
+
+template <class T>
+inline constexpr bool is_vector_v = is_vector<T>::value;
 
 template <class T> inline
 std::ostream& join(const T& v, std::ostream& ost, std::string_view delimiter) {
@@ -66,14 +65,14 @@ inline std::string longest(const std::vector<std::string>& args) {
     return lstrip(*it);
 }
 
-template <class T, enable_if_t<!is_vector<T>{}> = nullptr> inline
+template <class T, std::enable_if_t<!is_vector_v<T>>* = nullptr> inline
 std::string doc_default(const T& x, std::string_view doc) {
     std::ostringstream oss;
     oss << doc << " (=" << x << ")";
     return oss.str();
 }
 
-template <class T, enable_if_t<is_vector<T>{}> = nullptr> inline
+template <class T, std::enable_if_t<is_vector_v<T>>* = nullptr> inline
 std::string doc_default(const T& x, std::string_view doc) {
     std::ostringstream oss;
     join(x, oss << doc << " (=[", ",") << "])";
@@ -134,24 +133,24 @@ struct try_split {
     }
 };
 
-template <class T, enable_if_t<!is_vector<T>{}> = nullptr>
+template <class T, std::enable_if_t<!is_vector_v<T>>* = nullptr>
 inline try_conversion<T> filter() {
     return try_conversion<T>{};
 }
 
-template <class T, enable_if_t<is_vector<T>{}> = nullptr>
+template <class T, std::enable_if_t<is_vector_v<T>>* = nullptr>
 inline try_split<T> filter() {
     return try_split<T>{};
 }
 
-template <class T, class X, enable_if_t<!is_vector<T>{}> = nullptr> inline
+template <class T, class X, std::enable_if_t<!is_vector_v<T>>* = nullptr> inline
 std::function<void(const char*)> set(X* target) {
     return [target](const char* s){
         *target = sto<T>(s);
     };
 }
 
-template <class T, class X, enable_if_t<is_vector<T>{}> = nullptr> inline
+template <class T, class X, std::enable_if_t<is_vector_v<T>>* = nullptr> inline
 std::function<void(const char*)> set(X* target) {
     return [target](const char* s){
         target->clear();
@@ -159,14 +158,14 @@ std::function<void(const char*)> set(X* target) {
     };
 }
 
-template <class T, class X, enable_if_t<!is_vector<T>{}> = nullptr> inline
+template <class T, class X, std::enable_if_t<!is_vector_v<T>>* = nullptr> inline
 std::function<void(const char*)> append_positional(X* target) {
     return [target](const char* s){
         target->operator[]("--").push_back(sto<T>(s));
     };
 }
 
-template <class T, class X, enable_if_t<is_vector<T>{}> = nullptr> inline
+template <class T, class X, std::enable_if_t<is_vector_v<T>>* = nullptr> inline
 std::function<void(const char*)> append_positional(X* target) {
     return [target](const char* s){
         auto v = nlohmann::json::array();
@@ -175,12 +174,12 @@ std::function<void(const char*)> append_positional(X* target) {
     };
 }
 
-template <class T, class X, enable_if_t<std::is_arithmetic<T>{}> = nullptr> inline
+template <class T, class X, std::enable_if_t<std::is_arithmetic_v<T>>* = nullptr> inline
 std::function<void(void)> clear(X*) {
     return [](){};
 }
 
-template <class T, class X, enable_if_t<!std::is_arithmetic<T>{}> = nullptr> inline
+template <class T, class X, std::enable_if_t<!std::is_arithmetic_v<T>>* = nullptr> inline
 std::function<void(void)> clear(X* target) {
     return [target](){target->clear();};
 }
@@ -190,7 +189,7 @@ std::function<void(void)> clear(X* target) {
 template <class T> inline clipp::parameter
 value(const std::string& label) {
     return clipp::value(detail::filter<T>(), label)
-             .required(std::is_arithmetic<T>{});
+             .required(std::is_arithmetic_v<T>);
 }
 
 template <class T, class Target, class... Rest> inline clipp::parameter
@@ -243,14 +242,14 @@ option(F&& flags, Target* target, Rest*... rest) {
     return option<T>(std::forward<F>(flags), rest...).call(detail::clear<T>(target));
 }
 
-template <class T, class F, detail::enable_if_t<!std::is_same<T, bool>{}> = nullptr, class... Targets>
+template <class T, class F, std::enable_if_t<!std::is_same_v<T, bool>>* = nullptr, class... Targets>
 inline clipp::group
 group(F&& flags, const std::string& label, Targets*... targets) {
     return option<T>(std::forward<F>(flags), targets...)
            & value<T>(label, targets...);
 }
 
-template <class T, detail::enable_if_t<!std::is_same<T, bool>{}> = nullptr>
+template <class T, std::enable_if_t<!std::is_same_v<T, bool>>* = nullptr>
 inline clipp::group
 option(std::vector<std::string>&& flags, T* target, std::string_view doc="", const std::string& label="") {
     const auto key = detail::longest(flags);
@@ -261,7 +260,7 @@ option(std::vector<std::string>&& flags, T* target, std::string_view doc="", con
    );
 }
 
-template <class T, detail::enable_if_t<!std::is_same<T, bool>{}> = nullptr>
+template <class T, std::enable_if_t<!std::is_same_v<T, bool>>* = nullptr>
 inline clipp::group
 option(nlohmann::json* obj, std::vector<std::string>&& flags, const T init, std::string_view doc="", const std::string& label="") {
     const auto key = detail::longest(flags);
@@ -273,7 +272,7 @@ option(nlohmann::json* obj, std::vector<std::string>&& flags, const T init, std:
     );
 }
 
-template <class T, detail::enable_if_t<!std::is_same<T, bool>{} && !std::is_same<T, const char>{}> = nullptr>
+template <class T, std::enable_if_t<!std::is_same_v<T, bool> && !std::is_same_v<T, const char>>* = nullptr>
 inline clipp::group
 option(nlohmann::json* obj, std::vector<std::string>&& flags, T* target, std::string_view doc="", const std::string& label="") {
     const auto key = detail::longest(flags);
@@ -285,7 +284,7 @@ option(nlohmann::json* obj, std::vector<std::string>&& flags, T* target, std::st
     );
 }
 
-template <class T, detail::enable_if_t<!std::is_same<T, bool>{}> = nullptr>
+template <class T, std::enable_if_t<!std::is_same_v<T, bool>>* = nullptr>
 inline clipp::group
 option(std::vector<std::string>&& flags,
        std::vector<T> choices, T* target, std::string_view doc="") {
@@ -298,7 +297,7 @@ option(std::vector<std::string>&& flags,
     );
 }
 
-template <class T, detail::enable_if_t<!std::is_same<T, bool>{}> = nullptr>
+template <class T, std::enable_if_t<!std::is_same_v<T, bool>>* = nullptr>
 inline clipp::group
 option(nlohmann::json* obj, std::vector<std::string>&& flags,
        std::vector<T> choices, const T init, std::string_view doc="") {
@@ -312,7 +311,7 @@ option(nlohmann::json* obj, std::vector<std::string>&& flags,
     );
 }
 
-template <class T, detail::enable_if_t<!std::is_same<T, bool>{} && !std::is_same<T, const char>{}> = nullptr>
+template <class T, std::enable_if_t<!std::is_same_v<T, bool> && !std::is_same_v<T, const char>>* = nullptr>
 inline clipp::group
 option(nlohmann::json* obj, std::vector<std::string>&& flags,
        std::vector<T> choices, T* target, std::string_view doc="") {
