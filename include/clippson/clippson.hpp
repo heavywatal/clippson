@@ -176,24 +176,24 @@ std::function<void(void)> clear(X* target) {
 } // namespace detail
 
 template <class T> inline clipp::parameter
-value(const std::string& label) {
-    return clipp::value(detail::filter<T>(), label)
+value(std::string_view label) {
+    return clipp::value(detail::filter<T>(), std::string{label})
              .required(std::is_arithmetic_v<T>);
 }
 
 template <class T, class Target, class... Rest> inline clipp::parameter
-value(const std::string& label, Target* target, Rest*... rest) {
+value(std::string_view label, Target* target, Rest*... rest) {
     return value<T>(label, rest...).call(detail::set<T>(target));
 }
 
 template <class T> inline clipp::parameter
-value(nlohmann::json* obj, const std::string& label) {
-    return clipp::value(detail::filter<T>(), label)
+value(nlohmann::json* obj, std::string_view label) {
+    return clipp::value(detail::filter<T>(), std::string{label})
              .call(detail::append_positional<T>(obj));
 }
 
 template <class T, class Target, class... Rest> inline clipp::parameter
-value(nlohmann::json* obj, const std::string& label, Target* target, Rest*... rest) {
+value(nlohmann::json* obj, std::string_view label, Target* target, Rest*... rest) {
     return value<T>(obj, label, rest...).call(detail::set<T>(target));
 }
 
@@ -233,7 +233,7 @@ option(F&& flags, Target* target, Rest*... rest) {
 
 template <class T, class F, class... Targets>
 inline clipp::group
-group(F&& flags, const std::string& label, Targets*... targets) {
+group(F&& flags, std::string_view label, Targets*... targets) {
     return option<T>(std::forward<F>(flags), targets...)
            & value<T>(label, targets...);
 }
@@ -241,9 +241,9 @@ group(F&& flags, const std::string& label, Targets*... targets) {
 template <class T>
 inline auto
 option(std::vector<std::string>&& flags,
-       T* target, const std::string& doc="", const std::string& label="") {
+       T* target, std::string_view doc="", std::string_view label="") {
     if constexpr (std::is_same_v<T, bool>) {
-        return option<bool>(std::move(flags)).set(*target).doc(doc);
+        return option<bool>(std::move(flags)).set(*target).doc(std::string{doc});
     } else {
         const auto key = detail::longest(flags);
         return (
@@ -257,11 +257,11 @@ option(std::vector<std::string>&& flags,
 template <class T>
 inline auto
 option(nlohmann::json* obj, std::vector<std::string>&& flags,
-       const T init, const std::string& doc="", const std::string& label="") {
+       const T init, std::string_view doc="", std::string_view label="") {
     const auto key = detail::longest(flags);
     auto& target_js = (*obj)[key] = init;
     if constexpr (std::is_same_v<T, bool>) {
-        return option<bool>(std::move(flags)).call(detail::set<bool>(&target_js)).doc(doc);
+        return option<bool>(std::move(flags)).call(detail::set<bool>(&target_js)).doc(std::string{doc});
     } else {
         return (
           group<T>(key + "=", label, &target_js),
@@ -274,11 +274,11 @@ option(nlohmann::json* obj, std::vector<std::string>&& flags,
 template <class T, std::enable_if_t<!std::is_same_v<T, const char>>* = nullptr>
 inline auto
 option(nlohmann::json* obj, std::vector<std::string>&& flags,
-       T* target, const std::string& doc="", const std::string& label="") {
+       T* target, std::string_view doc="", std::string_view label="") {
     const auto key = detail::longest(flags);
     auto& target_js = (*obj)[key] = *target;
     if constexpr (std::is_same_v<T, bool>) {
-        return option<bool>(std::move(flags)).call(detail::set<bool>(&target_js)).set(*target).doc(doc);
+        return option<bool>(std::move(flags)).call(detail::set<bool>(&target_js)).set(*target).doc(std::string{doc});
     } else {
         return (
           group<T>(key + "=", label, &target_js, target),
