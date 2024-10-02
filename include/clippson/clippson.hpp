@@ -26,6 +26,13 @@ struct is_vector<std::vector<T>> : std::true_type {};
 template <class T>
 inline constexpr bool is_vector_v = is_vector<T>::value;
 
+template <class T>
+inline constexpr bool
+is_strlike_v = std::is_convertible_v<T, std::string_view>;
+
+template <class T>
+using try_strview_t = typename std::conditional_t<is_strlike_v<T>, std::string_view, T>;
+
 template <class T> inline
 std::ostream& join(const T& v, std::ostream& ost, std::string_view delimiter) {
     if (v.empty()) return ost;
@@ -49,11 +56,11 @@ inline std::string to_string(const nlohmann::json& x) {
     return oss.str();
 }
 
-inline std::string lstrip(const std::string& s) {
+inline std::string_view lstrip(std::string_view s) {
     return s.substr(s.find_first_not_of('-'));
 }
 
-inline size_t length(std::string_view s) {
+inline auto length(std::string_view s) {
     return s.size() - s.find_first_not_of('-');
 }
 
@@ -62,7 +69,7 @@ inline std::string longest(const std::vector<std::string>& args) {
                   [](std::string_view lhs, std::string_view rhs) {
                       return length(lhs) < length(rhs);
                   });
-    return lstrip(*it);
+    return std::string{lstrip(*it)};
 }
 
 template <class T> inline
@@ -77,39 +84,35 @@ std::string doc_default(const T& x, std::string_view doc) {
 }
 
 template <class T> inline T
-sto(const std::string& s) {
-  std::string_view sv(s);
+sto(std::string_view sv) {
   T x{};
   std::from_chars(std::begin(sv), std::end(sv), x);
   return x;
 }
 
-template <> inline std::string
-sto(const std::string& s) {return s;}
-
-template <> inline const char*
-sto(const std::string& s) {return s.c_str();}
+template <> inline std::string_view
+sto(std::string_view sv) {return sv;}
 
 template <> inline bool
-sto(const std::string&) {return true;}
+sto(std::string_view) {return true;}
 
 template <> inline double
-sto(const std::string& s) {return std::stod(s);}
+sto(std::string_view sv) {return std::stod(std::string{sv});}
 
 template <class T, class X> inline void
-split(const std::string& src, X* dst, std::string_view delimiter=",") {
+split(std::string_view src, X* dst, std::string_view delimiter=",") {
     if (src.empty()) return;
     for (size_t start = 0, pos = 0; pos != src.npos; start = pos + 1u) {
         pos = src.find_first_of(delimiter, start);
-        dst->push_back(sto<T>(src.substr(start, pos - start)));
+        dst->push_back(sto<try_strview_t<T>>(src.substr(start, pos - start)));
     }
 }
 
 template <class T>
 struct try_conversion {
-    bool operator()(const std::string& s) const noexcept {
+    bool operator()(std::string_view s) const noexcept {
         try {
-            sto<T>(s);
+            sto<try_strview_t<T>>(s);
         } catch (...) {
             return false;
         }
@@ -119,7 +122,7 @@ struct try_conversion {
 
 template <class T>
 struct try_split {
-    bool operator()(const std::string& s) const noexcept {
+    bool operator()(std::string_view s) const noexcept {
         T v;
         try {
             split<typename T::value_type>(s, &v, ",");
@@ -146,7 +149,7 @@ std::function<void(const char*)> set(X* target) {
             target->clear();
             split<typename T::value_type>(s, target);
         } else {
-            *target = sto<T>(s);
+            *target = sto<try_strview_t<T>>(s);
         }
     };
 }
@@ -159,7 +162,7 @@ std::function<void(const char*)> append_positional(X* target) {
             split<typename T::value_type>(s, &v);
             target->operator[]("--").push_back(std::move(v));
         } else {
-            target->operator[]("--").push_back(sto<T>(s));
+            target->operator[]("--").push_back(sto<try_strview_t<T>>(s));
         }
     };
 }
