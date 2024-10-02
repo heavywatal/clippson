@@ -26,13 +26,6 @@ struct is_vector<std::vector<T>> : std::true_type {};
 template <class T>
 inline constexpr bool is_vector_v = is_vector<T>::value;
 
-template <class T>
-inline constexpr bool
-is_strlike_v = std::is_convertible_v<T, std::string_view>;
-
-template <class T>
-using try_strview_t = typename std::conditional_t<is_strlike_v<T>, std::string_view, T>;
-
 template <class T> inline
 std::ostream& join(const T& v, std::ostream& ost, std::string_view delimiter) {
     if (v.empty()) return ost;
@@ -83,7 +76,8 @@ std::string doc_default(const T& x, std::string_view doc) {
     return oss.str();
 }
 
-template <class T> inline T
+template <class T> inline
+std::conditional_t<std::is_convertible_v<T, std::string_view>, std::string_view, T>
 sto(std::string_view sv) {
   T x{};
   std::from_chars(std::begin(sv), std::end(sv), x);
@@ -91,20 +85,23 @@ sto(std::string_view sv) {
 }
 
 template <> inline std::string_view
-sto(std::string_view sv) {return sv;}
+sto<std::string>(std::string_view sv) {return sv;}
+
+template <> inline std::string_view
+sto<const char*>(std::string_view sv) {return sv;}
 
 template <> inline bool
-sto(std::string_view) {return true;}
+sto<bool>(std::string_view) {return true;}
 
 template <> inline double
-sto(std::string_view sv) {return std::stod(std::string{sv});}
+sto<double>(std::string_view sv) {return std::stod(std::string{sv});}
 
 template <class T, class X> inline void
 split(std::string_view src, X* dst, std::string_view delimiter=",") {
     if (src.empty()) return;
     for (size_t start = 0, pos = 0; pos != src.npos; start = pos + 1u) {
         pos = src.find_first_of(delimiter, start);
-        dst->push_back(sto<try_strview_t<T>>(src.substr(start, pos - start)));
+        dst->push_back(sto<T>(src.substr(start, pos - start)));
     }
 }
 
@@ -112,7 +109,7 @@ template <class T>
 struct try_conversion {
     bool operator()(std::string_view s) const noexcept {
         try {
-            sto<try_strview_t<T>>(s);
+            sto<T>(s);
         } catch (...) {
             return false;
         }
@@ -149,7 +146,7 @@ std::function<void(const char*)> set(X* target) {
             target->clear();
             split<typename T::value_type>(s, target);
         } else {
-            *target = sto<try_strview_t<T>>(s);
+            *target = sto<T>(s);
         }
     };
 }
@@ -162,7 +159,7 @@ std::function<void(const char*)> append_positional(X* target) {
             split<typename T::value_type>(s, &v);
             target->operator[]("--").push_back(std::move(v));
         } else {
-            target->operator[]("--").push_back(sto<try_strview_t<T>>(s));
+            target->operator[]("--").push_back(sto<T>(s));
         }
     };
 }
