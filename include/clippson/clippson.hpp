@@ -26,27 +26,11 @@ struct is_vector<std::vector<T>> : std::true_type {};
 template <class T>
 inline constexpr bool is_vector_v = is_vector<T>::value;
 
-template <class T> inline
-std::ostream& join(const T& v, std::ostream& ost, std::string_view delimiter) {
-    if (v.empty()) return ost;
-    auto it = v.begin();
-    ost << *it;
-    for (++it; it != v.end(); ++it) {
-        ost << delimiter << *it;
-    }
-    return ost;
-}
-
 inline std::string to_string(const nlohmann::json& x) {
-    std::ostringstream oss;
     if (x.is_string()) {
-        oss << x.get<std::string>();
-    } else if (x.is_array()) {
-        join(x, oss, ",");
-    } else {
-        oss << x;
+        return x.get<std::string>();
     }
-    return oss.str();
+    return x.dump(-1);
 }
 
 inline std::string_view lstrip(std::string_view s) {
@@ -68,11 +52,7 @@ inline std::string longest(const std::vector<std::string>& args) {
 template <class T> inline
 std::string doc_default(const T& x, std::string_view doc) {
     std::ostringstream oss;
-    if constexpr (is_vector_v<T>) {
-        join(x, oss << doc << " (=[", ",") << "])";
-    } else {
-        oss << doc << " (=" << x << ")";
-    }
+    oss << doc << " (=" << nlohmann::json(x) << ")";
     return oss.str();
 }
 
@@ -199,9 +179,11 @@ value(nlohmann::json* obj, std::string_view label, Target* target, Rest*... rest
 
 template <class T> inline clipp::parameter
 command(const T& x) {
-    std::ostringstream oss;
-    oss << x;
-    return clipp::command(oss.str());
+    if constexpr (std::is_convertible_v<T, std::string_view>) {
+        return clipp::command(x);
+    } else {
+        return clipp::command(std::to_string(x));
+    }
 }
 
 template <class T, class Target, class... Rest> inline clipp::parameter
