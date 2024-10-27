@@ -7,7 +7,6 @@
 
 #include <stdexcept>
 #include <type_traits>
-#include <algorithm>
 #include <vector>
 #include <string>
 #include <charconv>
@@ -37,16 +36,15 @@ inline std::string_view lstrip(std::string_view s) {
     return s.substr(s.find_first_not_of('-'));
 }
 
-inline auto length(std::string_view s) {
-    return s.size() - s.find_first_not_of('-');
-}
-
 inline std::string longest(const std::vector<std::string>& args) {
-    auto it = std::max_element(args.begin(), args.end(),
-                  [](std::string_view lhs, std::string_view rhs) {
-                      return length(lhs) < length(rhs);
-                  });
-    return std::string{lstrip(*it)};
+    std::string_view champion = "";
+    for (std::string_view x: args) {
+        std::string_view challenger = lstrip(x);
+        if (challenger.size() > champion.size()) {
+            champion = challenger;
+        }
+    }
+    return std::string(champion);
 }
 
 template <class T> inline
