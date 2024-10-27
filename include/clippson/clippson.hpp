@@ -127,15 +127,6 @@ std::function<void(const char*)> append_positional(X* target) {
     };
 }
 
-template <class T, class X> inline
-std::function<void(void)> clear(X* target) {
-    if constexpr (std::is_arithmetic_v<T>) {
-        return [](){};
-    } else {
-        return [target](){target->clear();};
-    }
-}
-
 } // namespace detail
 
 template <class T> inline clipp::parameter
@@ -193,7 +184,11 @@ option(F&& flags) {
 
 template <class T, class F, class Target, class... Rest> inline clipp::parameter
 option(F&& flags, Target* target, Rest*... rest) {
-    return option<T>(std::forward<F>(flags), rest...).call(detail::clear<T>(target));
+    return option<T>(std::forward<F>(flags), rest...).call(
+      [target](){if constexpr (std::is_arithmetic_v<T>) (void)target; else {
+        return target->clear();
+      }}
+    );
 }
 
 template <class T, class F, class... Targets>
