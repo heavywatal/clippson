@@ -86,38 +86,21 @@ split(std::string_view src, X* dst, std::string_view delimiter=",") {
 }
 
 template <class T>
-struct try_conversion {
+struct Filter {
     bool operator()(std::string_view s) const noexcept {
         try {
-            sto<T>(s);
+            if constexpr (is_vector_v<T>) {
+                T v;
+                split<typename T::value_type>(s, &v, ",");
+            } else {
+                sto<T>(s);
+            }
         } catch (...) {
             return false;
         }
         return true;
     }
 };
-
-template <class T>
-struct try_split {
-    bool operator()(std::string_view s) const noexcept {
-        T v;
-        try {
-            split<typename T::value_type>(s, &v, ",");
-        } catch (...) {
-            return false;
-        }
-        return true;
-    }
-};
-
-template <class T>
-inline auto filter() {
-    if constexpr (is_vector_v<T>) {
-        return try_split<T>{};
-    } else {
-        return try_conversion<T>{};
-    }
-}
 
 template <class T, class X> inline
 std::function<void(const char*)> set(X* target) {
@@ -157,7 +140,7 @@ std::function<void(void)> clear(X* target) {
 
 template <class T> inline clipp::parameter
 value(std::string_view label) {
-    return clipp::value(detail::filter<T>(), std::string{label})
+    return clipp::value(detail::Filter<T>{}, std::string{label})
              .required(std::is_arithmetic_v<T>);
 }
 
@@ -168,7 +151,7 @@ value(std::string_view label, Target* target, Rest*... rest) {
 
 template <class T> inline clipp::parameter
 value(nlohmann::json* obj, std::string_view label) {
-    return clipp::value(detail::filter<T>(), std::string{label})
+    return clipp::value(detail::Filter<T>{}, std::string{label})
              .call(detail::append_positional<T>(obj));
 }
 
