@@ -1,1 +1,3 @@
 /build
+/include/clippson/*.h
+/include/clippson/json*

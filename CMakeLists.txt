@@ -3,6 +3,7 @@ project(clippson
   VERSION 0.8.8
   LANGUAGES CXX)
 
+cmake_policy(SET CMP0169 OLD)  # 3.28
 set(CMAKE_VERBOSE_MAKEFILE ON)
 include(CMakePrintHelpers)
 include(FetchContent)
@@ -31,6 +32,7 @@ function(git_fetch package version repo)
     GIT_TAG ${tag}
     GIT_SHALLOW ON
   )
+  FetchContent_GetProperties(${package})
   if(NOT ${package}_POPULATED)
     FetchContent_Populate(${package})
   endif()
@@ -41,24 +43,23 @@ endfunction()
 git_fetch(clipp v1.2.3.1 heavywatal/clipp)
 git_fetch(json v3.11.3 heavywatal/json)
 
+set(clipp_srcs ${clipp_SOURCE_DIR}/include/clipp.h)
+set(json_srcs ${json_SOURCE_DIR}/src/json.hpp ${json_SOURCE_DIR}/src/json_fwd.hpp)
+foreach(src IN LISTS clipp_srcs json_srcs)
+  cmake_print_variables(src)
+  configure_file(${src} ${PROJECT_SOURCE_DIR}/include/${PROJECT_NAME} COPYONLY)
+endforeach()
+
 add_library(${PROJECT_NAME} INTERFACE)
 add_library(${PROJECT_NAME}::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
 target_include_directories(${PROJECT_NAME} INTERFACE
   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
-  $<BUILD_INTERFACE:${clipp_SOURCE_DIR}/include>
-  $<BUILD_INTERFACE:${json_SOURCE_DIR}/src>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 )
 target_compile_features(${PROJECT_NAME} INTERFACE cxx_std_17)
 
 install(DIRECTORY ${PROJECT_SOURCE_DIR}/include/
   DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-)
-install(FILES
-  ${clipp_SOURCE_DIR}/include/clipp.h
-  ${json_SOURCE_DIR}/src/json.hpp
-  ${json_SOURCE_DIR}/src/json_fwd.hpp
-  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}
 )
 install(TARGETS ${PROJECT_NAME}
   EXPORT ${PROJECT_NAME}-config
