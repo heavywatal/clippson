@@ -25,7 +25,17 @@ struct is_vector<std::vector<T>> : std::true_type {};
 template <class T>
 inline constexpr bool is_vector_v = is_vector<T>::value;
 
-inline std::string to_string(const nlohmann::json& x) {
+template <class T> inline std::string
+to_string(const T& x) {
+    if constexpr (std::is_convertible_v<T, std::string_view>) {
+        return x;
+    } else {
+        return std::to_string(x);
+    }
+}
+
+template <> inline std::string
+to_string<>(const nlohmann::json& x) {
     if (x.is_string()) {
         return x.get<std::string>();
     }
@@ -149,18 +159,9 @@ value(nlohmann::json* obj, std::string_view label, Target* target, Rest*... rest
     return value<T>(obj, label, rest...).call(detail::set<T>(target));
 }
 
-template <class T> inline clipp::parameter
-command(const T& x) {
-    if constexpr (std::is_convertible_v<T, std::string_view>) {
-        return clipp::command(x);
-    } else {
-        return clipp::command(std::to_string(x));
-    }
-}
-
 template <class T, class Target, class... Rest> inline clipp::parameter
 command(const T& x, Target* target, Rest*... rest) {
-    return command(x, rest...).call(detail::set<T>(target));
+    return clipp::command(detail::to_string(x), rest...).call(detail::set<T>(target));
 }
 
 template <class T, class... Targets> inline clipp::group
