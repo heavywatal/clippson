@@ -298,7 +298,7 @@ inline clipp::doc_formatting doc_format() {
     ;
 }
 
-template <class Stream> inline
+template <class Stream> [[deprecated]] inline
 Stream& debug_print(Stream& ost, const clipp::parsing_result& parsed, const clipp::group& cli, const clipp::doc_formatting& fmt = doc_format()) {
     ost << "\nParsing result:\n";
     clipp::debug::print(ost, parsed);
@@ -312,8 +312,9 @@ clipp::parsing_result parse(const clipp::group& cli, Args&&... args) {
     auto parsed = clipp::parse(std::forward<Args>(args)..., cli);
     if (!parsed) {
         std::ostringstream oss;
-        debug_print(oss, parsed, cli);
-        throw std::runtime_error(oss.str());
+        oss << "ERROR:invalid_argument:clipp::parse():\n";
+        clipp::debug::print(oss, parsed);
+        throw std::invalid_argument(oss.str());
     }
     return parsed;
 }
