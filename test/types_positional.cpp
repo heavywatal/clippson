@@ -5,11 +5,11 @@
 
 bool test_roundtrip(const clipp::group& cli, nlohmann::json& vm) {
     std::string current_values = vm.dump(2);
-    auto args = wtl::arg_list(vm);
+    auto args = clippson::arg_list(vm);
     for (const auto& x: args) {std::cout << " {" << x << "}";}
     std::cout << "\n";
     if (vm.find("--") != vm.end()) vm["--"].clear();
-    wtl::parse(cli, args);
+    clippson::parse(cli, args);
     return current_values == vm.dump(2);
 }
 
@@ -24,21 +24,21 @@ int main(int argc, char* argv[]) {
     double DOUBLE = std::numeric_limits<double>::max();
     std::string STRING = "Hello, world!";
     std::vector<int> VECTOR = {0, 1};
-    auto cli = wtl::option(&vm, {"h", "help"}, &help, "Print help") | (
-      wtl::value<bool>(&vm, "bool", &BOOL),
-      wtl::value<int>(&vm, "int", &INT),
-      wtl::value<long>(&vm, "long", &LONG),
-      wtl::value<unsigned>(&vm, "unsigned", &UNSIGNED),
-      wtl::value<size_t>(&vm, "size_t", &SIZE_T),
-      wtl::value<double>(&vm, "double", &DOUBLE),
-      wtl::value<std::string>(&vm, "string", &STRING),
-      wtl::value<std::vector<int>>(&vm, "vector", &VECTOR)
+    auto cli = clippson::option(&vm, {"h", "help"}, &help, "Print help") | (
+      clippson::value<bool>(&vm, "bool", &BOOL),
+      clippson::value<int>(&vm, "int", &INT),
+      clippson::value<long>(&vm, "long", &LONG),
+      clippson::value<unsigned>(&vm, "unsigned", &UNSIGNED),
+      clippson::value<size_t>(&vm, "size_t", &SIZE_T),
+      clippson::value<double>(&vm, "double", &DOUBLE),
+      clippson::value<std::string>(&vm, "string", &STRING),
+      clippson::value<std::vector<int>>(&vm, "vector", &VECTOR)
     ).doc("Positional targets");
     std::string default_values = vm.dump(2);
-    wtl::parse(cli, argc, argv);
+    clippson::parse(cli, argc, argv);
     std::string current_values = vm.dump(2);
     if (help) {
-        auto fmt = wtl::doc_format();
+        auto fmt = clippson::doc_format();
         std::cout << clipp::documentation(cli, fmt) << "\n";
         return 0;
     }

@@ -12,7 +12,7 @@
 #include <charconv>
 #include <sstream>
 
-namespace wtl {
+namespace clippson {
 
 namespace detail {
 
@@ -343,6 +343,8 @@ inline clipp::arg_list arg_list(const nlohmann::json& obj) {
     return args;
 }
 
-}  // namespace wtl
+}  // namespace clippson
+
+namespace wtl { using namespace clippson; } // [[deprecated]]
 
 #endif /* WTL_CLIPPSON_HPP_ */

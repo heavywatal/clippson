@@ -37,7 +37,7 @@ cmake --install build
 ## Usage
 
 Add `#include <clippson/clippson.hpp>` to your source code.
-Functions are defined in the namespace `wtl`.
+Functions are defined in the namespace `clippson::`.
 The required headers `clipp.h` and `json.hpp` are included therein, hence their functions are available in the original namespaces.
 
 See [test/example.cpp](https://github.com/heavywatal/clippson/blob/master/test/example.cpp) for more details.

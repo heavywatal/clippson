@@ -5,32 +5,32 @@
 
 bool test_roundtrip(const clipp::group& cli, nlohmann::json& vm) {
     std::string current_values = vm.dump(2);
-    auto args = wtl::arg_list(vm);
+    auto args = clippson::arg_list(vm);
     for (const auto& x: args) {std::cout << " {" << x << "}";}
     std::cout << "\n";
     if (vm.find("--") != vm.end()) vm["--"].clear();
-    wtl::parse(cli, args);
+    clippson::parse(cli, args);
     return current_values == vm.dump(2);
 }
 
 int main(int argc, char* argv[]) {
     nlohmann::json vm;
     auto cli = (
-      wtl::option(&vm, {"h", "help"}, false, "Print help"),
-      wtl::option(&vm, {"b", "bool"}, false),
-      wtl::option(&vm, {"i", "int"}, std::numeric_limits<int>::max()),
-      wtl::option(&vm, {"l", "long"}, std::numeric_limits<long>::max()),
-      wtl::option(&vm, {"u", "unsigned"}, std::numeric_limits<unsigned>::max()),
-      wtl::option(&vm, {"s", "size_t"}, std::numeric_limits<size_t>::max()),
-      wtl::option(&vm, {"d", "double"}, std::numeric_limits<double>::max()),
-      wtl::option(&vm, {"c", "string"}, "Hello, world!"),
-      wtl::option(&vm, {"v", "vector"}, std::vector<int>({0, 1}))
+      clippson::option(&vm, {"h", "help"}, false, "Print help"),
+      clippson::option(&vm, {"b", "bool"}, false),
+      clippson::option(&vm, {"i", "int"}, std::numeric_limits<int>::max()),
+      clippson::option(&vm, {"l", "long"}, std::numeric_limits<long>::max()),
+      clippson::option(&vm, {"u", "unsigned"}, std::numeric_limits<unsigned>::max()),
+      clippson::option(&vm, {"s", "size_t"}, std::numeric_limits<size_t>::max()),
+      clippson::option(&vm, {"d", "double"}, std::numeric_limits<double>::max()),
+      clippson::option(&vm, {"c", "string"}, "Hello, world!"),
+      clippson::option(&vm, {"v", "vector"}, std::vector<int>({0, 1}))
     ).doc("Notified to json:");
     std::string default_values = vm.dump(2);
-    wtl::parse(cli, argc, argv);
+    clippson::parse(cli, argc, argv);
     std::string current_values = vm.dump(2);
     if (vm["help"]) {
-        auto fmt = wtl::doc_format();
+        auto fmt = clippson::doc_format();
         std::cout << clipp::documentation(cli, fmt) << "\n";
     }
     std::cout << "Default values: " << default_values << "\n";

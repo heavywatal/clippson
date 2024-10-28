@@ -14,19 +14,19 @@ int main(int argc, char* argv[]) {
     std::string STRING = "Hello, world!";
     std::vector<int> VECTOR = {0, 1};
     auto cli = (
-      wtl::option({"h", "help"}, &help, "Print help"),
-      wtl::option({"b", "bool"}, &BOOL),
-      wtl::option({"i", "int"}, &INT),
-      wtl::option({"l", "long"}, &LONG),
-      wtl::option({"u", "unsigned"}, &UNSIGNED),
-      wtl::option({"s", "size_t"}, &SIZE_T),
-      wtl::option({"d", "double"}, &DOUBLE),
-      wtl::option({"c", "string"}, &STRING),
-      wtl::option({"v", "vector"}, &VECTOR)
+      clippson::option({"h", "help"}, &help, "Print help"),
+      clippson::option({"b", "bool"}, &BOOL),
+      clippson::option({"i", "int"}, &INT),
+      clippson::option({"l", "long"}, &LONG),
+      clippson::option({"u", "unsigned"}, &UNSIGNED),
+      clippson::option({"s", "size_t"}, &SIZE_T),
+      clippson::option({"d", "double"}, &DOUBLE),
+      clippson::option({"c", "string"}, &STRING),
+      clippson::option({"v", "vector"}, &VECTOR)
     ).doc("Notified to targets:");
-    wtl::parse(cli, argc, argv);
+    clippson::parse(cli, argc, argv);
     if (help) {
-        auto fmt = wtl::doc_format();
+        auto fmt = clippson::doc_format();
         std::cout << clipp::documentation(cli, fmt) << "\n";
     }
     return 0;
