@@ -1,9 +1,8 @@
 cmake_minimum_required(VERSION 3.15)
 project(clippson
-  VERSION 0.8.7
+  VERSION 0.8.8
   LANGUAGES CXX)
 
-cmake_policy(SET CMP0076 NEW)
 set(CMAKE_VERBOSE_MAKEFILE ON)
 include(CMakePrintHelpers)
 include(FetchContent)
