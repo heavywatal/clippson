@@ -41,7 +41,7 @@ function(git_fetch package version repo)
 endfunction()
 
 git_fetch(clipp v1.2.3.1 heavywatal/clipp)
-git_fetch(json v3.11.3 heavywatal/json)
+git_fetch(json v3.12.0 heavywatal/json)
 
 set(clipp_srcs ${clipp_SOURCE_DIR}/include/clipp.h)
 set(json_srcs ${json_SOURCE_DIR}/src/json.hpp ${json_SOURCE_DIR}/src/json_fwd.hpp)
