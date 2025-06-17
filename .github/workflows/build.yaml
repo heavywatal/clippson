@@ -11,6 +11,7 @@ jobs:
     name: ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
         os: [macOS-latest, ubuntu-latest]
     steps:
@@ -19,5 +20,4 @@ jobs:
         run: cmake -S . -B build -DCMAKE_INSTALL_PREFIX=${HOME}/local
       - run: cmake --build build -j 2
       - run: cmake --install build
-      - run: ctest -V -j 2
-        working-directory: ./build
+      - run: ctest --test-dir build -V
