@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.15)
+cmake_minimum_required(VERSION 3.21)
 project(clippson
   VERSION 0.8.8
   LANGUAGES CXX)
@@ -81,6 +81,6 @@ install(FILES ${version_file}
 )
 
 include(CTest)
-if(BUILD_TESTING AND ${CMAKE_SOURCE_DIR} STREQUAL ${PROJECT_SOURCE_DIR})
+if(BUILD_TESTING AND PROJECT_IS_TOP_LEVEL)
   add_subdirectory(test)
 endif()

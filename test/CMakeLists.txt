@@ -7,7 +7,7 @@ set(source_files
   types_positional.cpp
 )
 foreach(src IN LISTS source_files)
-  get_filename_component(name_we ${src} NAME_WE)
+  cmake_path(GET src STEM name_we)
   add_executable(test-${name_we} ${src})
   set_target_properties(test-${name_we} PROPERTIES CXX_EXTENSIONS OFF)
   target_link_libraries(test-${name_we} PRIVATE ${PROJECT_NAME}::${PROJECT_NAME})
