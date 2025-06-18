@@ -3,6 +3,7 @@ project(clippson
   VERSION 0.8.8
   LANGUAGES CXX)
 
+cmake_policy(SET CMP0135 NEW)  # 3.24
 cmake_policy(SET CMP0169 OLD)  # 3.28
 set(CMAKE_VERBOSE_MAKEFILE ON)
 include(CMakePrintHelpers)
@@ -41,11 +42,17 @@ function(git_fetch package version repo)
 endfunction()
 
 git_fetch(clipp v1.2.3.1 heavywatal/clipp)
-git_fetch(json v3.12.0 heavywatal/json)
 
-set(clipp_srcs ${clipp_SOURCE_DIR}/include/clipp.h)
-set(json_srcs ${json_SOURCE_DIR}/src/json.hpp ${json_SOURCE_DIR}/src/json_fwd.hpp)
-foreach(src IN LISTS clipp_srcs json_srcs)
+set(JSON_Install OFF)
+set(JSON_MultipleHeaders OFF)
+FetchContent_Declare(json URL https://github.com/nlohmann/json/releases/download/v3.12.0/json.tar.xz)
+FetchContent_MakeAvailable(json)
+
+foreach(src
+  ${clipp_SOURCE_DIR}/include/clipp.h
+  ${json_SOURCE_DIR}/single_include/nlohmann/json.hpp
+  ${json_SOURCE_DIR}/single_include/nlohmann/json_fwd.hpp
+)
   cmake_print_variables(src)
   configure_file(${src} ${PROJECT_SOURCE_DIR}/include/${PROJECT_NAME} COPYONLY)
 endforeach()
