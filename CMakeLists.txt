@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.24)
+cmake_minimum_required(VERSION 3.28)
 project(clippson
   VERSION 0.8.10
   LANGUAGES CXX)
@@ -9,7 +9,10 @@ include(FetchContent)
 include(GNUInstallDirs)
 cmake_print_variables(CMAKE_INSTALL_PREFIX)
 
-FetchContent_Declare(clipp URL https://github.com/heavywatal/clipp/archive/refs/tags/v1.2.3.2.tar.gz)
+FetchContent_Declare(clipp
+  URL https://github.com/heavywatal/clipp/archive/refs/tags/v1.2.3.2.tar.gz
+  EXCLUDE_FROM_ALL
+)
 FetchContent_Declare(json URL https://github.com/nlohmann/json/releases/download/v3.12.0/json.tar.xz)
 
 FetchContent_MakeAvailable(clipp)
