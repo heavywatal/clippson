@@ -1,52 +1,24 @@
-cmake_minimum_required(VERSION 3.21)
+cmake_minimum_required(VERSION 3.24)
 project(clippson
   VERSION 0.8.9
   LANGUAGES CXX)
 
-cmake_policy(SET CMP0135 NEW)  # 3.24
-cmake_policy(SET CMP0169 OLD)  # 3.28
 set(CMAKE_VERBOSE_MAKEFILE ON)
 include(CMakePrintHelpers)
 include(FetchContent)
 include(GNUInstallDirs)
 cmake_print_variables(CMAKE_INSTALL_PREFIX)
 
-function(import_env variable)
-  if(DEFINED ENV{${variable}})
-    set(${variable} $ENV{${variable}} PARENT_SCOPE)
-  endif()
-endfunction()
+FetchContent_Declare(clipp URL https://github.com/heavywatal/clipp/archive/refs/tags/v1.2.3.2.tar.gz)
+FetchContent_Declare(json URL https://github.com/nlohmann/json/releases/download/v3.12.0/json.tar.xz)
 
-function(git_fetch package version repo)
-  string(TOUPPER "${package}" upackage)
-  import_env("FETCHCONTENT_SOURCE_DIR_${upackage}")
-  if(IS_DIRECTORY "${FETCHCONTENT_SOURCE_DIR_${upackage}}")
-    set(tag "HEAD")
-  else()
-    set(tag "${version}")
-  endif()
-  cmake_print_variables(FETCHCONTENT_SOURCE_DIR_${upackage} tag)
-  set(FETCHCONTENT_QUIET OFF)
-  FetchContent_Declare(
-    ${package}
-    GIT_REPOSITORY https://github.com/${repo}.git
-    GIT_TAG ${tag}
-    GIT_SHALLOW ON
-  )
-  FetchContent_GetProperties(${package})
-  if(NOT ${package}_POPULATED)
-    FetchContent_Populate(${package})
-  endif()
-  set(${package}_SOURCE_DIR ${${package}_SOURCE_DIR} PARENT_SCOPE)
-  cmake_print_variables(${package}_SOURCE_DIR)
-endfunction()
-
-git_fetch(clipp v1.2.3.1 heavywatal/clipp)
+FetchContent_MakeAvailable(clipp)
+cmake_print_variables(clipp_SOURCE_DIR)
 
 set(JSON_Install OFF)
 set(JSON_MultipleHeaders OFF)
-FetchContent_Declare(json URL https://github.com/nlohmann/json/releases/download/v3.12.0/json.tar.xz)
 FetchContent_MakeAvailable(json)
+cmake_print_variables(json_SOURCE_DIR)
 
 foreach(src
   ${clipp_SOURCE_DIR}/include/clipp.h
