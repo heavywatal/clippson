@@ -10,7 +10,7 @@ include(GNUInstallDirs)
 cmake_print_variables(CMAKE_INSTALL_PREFIX)
 
 FetchContent_Declare(clipp
-  URL https://github.com/heavywatal/clipp/archive/refs/tags/v1.2.3.2.tar.gz
+  URL https://github.com/heavywatal/clipp/archive/refs/tags/v1.2.3.3.tar.gz
   EXCLUDE_FROM_ALL
 )
 FetchContent_Declare(json URL https://github.com/nlohmann/json/releases/download/v3.12.0/json.tar.xz)
